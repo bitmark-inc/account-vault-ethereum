@@ -4,7 +4,6 @@ import (
 	"context"
 	"fmt"
 	"math/big"
-	"os"
 
 	"github.com/ethereum/go-ethereum/accounts"
 	"github.com/ethereum/go-ethereum/accounts/abi/bind"
@@ -17,12 +16,6 @@ import (
 
 const DefaultDerivationPath = "m/44'/60'/0'/0/0"
 
-var EthereumRPCURL string
-
-func init() {
-	EthereumRPCURL = os.Getenv("ETHEREUM_RPC_URL")
-}
-
 type Wallet struct {
 	chainID   *big.Int
 	wallet    *hdwallet.Wallet
@@ -30,7 +23,7 @@ type Wallet struct {
 	rpcClient *ethclient.Client
 }
 
-func NewWallet(seed []byte, network string) (*Wallet, error) {
+func NewWallet(seed []byte, network, rpcURL string) (*Wallet, error) {
 	chainID := params.RinkebyChainConfig.ChainID
 	if network == "livenet" {
 		chainID = params.MainnetChainConfig.ChainID
@@ -46,7 +39,7 @@ func NewWallet(seed []byte, network string) (*Wallet, error) {
 	if err != nil {
 		return nil, err
 	}
-	rpcClient, err := ethclient.Dial(EthereumRPCURL)
+	rpcClient, err := ethclient.Dial(rpcURL)
 	if err != nil {
 		return nil, err
 	}
