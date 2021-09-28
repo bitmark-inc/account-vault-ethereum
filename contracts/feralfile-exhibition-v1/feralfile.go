@@ -64,56 +64,33 @@ func (c *FeralfileExhibitionV1Contract) Call(wallet *ethereum.Wallet, method, fu
 	switch method {
 	case "create_artwork":
 		var params struct {
-			Fingerprint  ethereum.BigInt `json:"fingerprint"`
-			Title        string          `json:"title"`
-			Medium       string          `json:"medium"`
-			EditionSize  int64           `json:"edition_size"`
-			InitialPrice int64           `json:"initial_price"`
+			Fingerprint string `json:"fingerprint"`
+			Title       string `json:"title"`
+			Description string `json:"description"`
+			Medium      string `json:"medium"`
+			EditionSize int64  `json:"edition_size"`
 		}
 
 		if err := json.Unmarshal(arguments, &params); err != nil {
 			return "", err
 		}
 
-		fingerprintBytes := params.Fingerprint.Bytes()
-		if len(fingerprintBytes) > 32 {
-			return "", fmt.Errorf("the fingerprint can not be more than 32 bytes")
-		}
-
-		var fingerprintArray [32]byte
-		if n := copy(fingerprintArray[:], fingerprintBytes); n != len(fingerprintBytes) {
-			return "", fmt.Errorf("incorrect size of fingerprint copied")
-		}
-
-		tx, err := contract.CreateArtwork(t, fingerprintArray,
-			params.Title, t.From,
-			params.Medium, "",
-			big.NewInt(params.EditionSize), big.NewInt(params.InitialPrice))
+		tx, err := contract.CreateArtwork(t, params.Fingerprint,
+			params.Title, params.Description, t.From,
+			params.Medium,
+			big.NewInt(params.EditionSize))
 		if err != nil {
 			return "", err
 		}
 		return tx.Hash().String(), err
-	case "mint_artwork":
-		var params struct {
-			ArtworkID ethereum.BigInt `json:"artwork_id"`
-			IPFSCID   []string        `json:"ipfs_cids"`
-		}
-		if err := json.Unmarshal(arguments, &params); err != nil {
-			return "", err
-		}
-
-		tx, err := contract.MintArtwork(t, &params.ArtworkID.Int, params.IPFSCID)
-		if err != nil {
-			return "", err
-		}
-		return tx.Hash().String(), nil
 	case "swap_artwork_from_bitmark":
 		var params struct {
-			ArtworkID     ethereum.BigInt `json:"artwork_id"`
-			BitmarkID     ethereum.BigInt `json:"bitmark_id"`
-			EditionNumber ethereum.BigInt `json:"edition_number"`
-			To            common.Address  `json:"to"`
-			IPFSCID       string          `json:"ipfs_cid"`
+			ArtworkID      ethereum.BigInt `json:"artwork_id"`
+			BitmarkID      ethereum.BigInt `json:"bitmark_id"`
+			EditionNumber  ethereum.BigInt `json:"edition_number"`
+			To             common.Address  `json:"to"`
+			PrevProvenance string          `json:"prev_provenance"`
+			IPFSCID        string          `json:"ipfs_cid"`
 		}
 		if err := json.Unmarshal(arguments, &params); err != nil {
 			return "", err
@@ -121,7 +98,7 @@ func (c *FeralfileExhibitionV1Contract) Call(wallet *ethereum.Wallet, method, fu
 
 		tx, err := contract.SwapArtworkFromBitmarks(t,
 			&params.ArtworkID.Int, &params.BitmarkID.Int, &params.EditionNumber.Int,
-			params.To, params.IPFSCID)
+			params.To, params.PrevProvenance, params.IPFSCID)
 		if err != nil {
 			return "", err
 		}
