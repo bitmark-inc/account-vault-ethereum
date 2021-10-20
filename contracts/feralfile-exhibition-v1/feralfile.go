@@ -6,6 +6,7 @@ import (
 	"math/big"
 
 	"github.com/ethereum/go-ethereum/common"
+	"github.com/ethereum/go-ethereum/core/types"
 
 	ethereum "github.com/bitmark-inc/account-vault-ethereum"
 )
@@ -50,16 +51,18 @@ func (c *FeralfileExhibitionV1Contract) Deploy(wallet *ethereum.Wallet, argument
 }
 
 // Call is the entry function for account vault to interact with a smart contract.
-func (c *FeralfileExhibitionV1Contract) Call(wallet *ethereum.Wallet, method, fund string, arguments json.RawMessage) (string, error) {
+func (c *FeralfileExhibitionV1Contract) Call(wallet *ethereum.Wallet, method, fund string, arguments json.RawMessage, noSend bool) (*types.Transaction, error) {
 	contract, err := NewFeralfileExhibition(common.HexToAddress(c.contractAddress), wallet.RPCClient())
 	if err != nil {
-		return "", err
+		return nil, err
 	}
 
 	t, err := wallet.Transactor()
 	if err != nil {
-		return "", err
+		return nil, err
 	}
+
+	t.NoSend = noSend
 
 	switch method {
 	case "create_artwork":
@@ -72,7 +75,7 @@ func (c *FeralfileExhibitionV1Contract) Call(wallet *ethereum.Wallet, method, fu
 		}
 
 		if err := json.Unmarshal(arguments, &params); err != nil {
-			return "", err
+			return nil, err
 		}
 
 		tx, err := contract.CreateArtwork(t, params.Fingerprint,
@@ -80,9 +83,9 @@ func (c *FeralfileExhibitionV1Contract) Call(wallet *ethereum.Wallet, method, fu
 			params.Medium,
 			big.NewInt(params.EditionSize))
 		if err != nil {
-			return "", err
+			return nil, err
 		}
-		return tx.Hash().String(), err
+		return tx, err
 	case "swap_artwork_from_bitmark":
 		var params struct {
 			ArtworkID      ethereum.BigInt `json:"artwork_id"`
@@ -93,18 +96,18 @@ func (c *FeralfileExhibitionV1Contract) Call(wallet *ethereum.Wallet, method, fu
 			IPFSCID        string          `json:"ipfs_cid"`
 		}
 		if err := json.Unmarshal(arguments, &params); err != nil {
-			return "", err
+			return nil, err
 		}
 
 		tx, err := contract.SwapArtworkFromBitmarks(t,
 			&params.ArtworkID.Int, &params.BitmarkID.Int, &params.EditionNumber.Int,
 			params.To, params.PrevProvenance, params.IPFSCID)
 		if err != nil {
-			return "", err
+			return nil, err
 		}
-		return tx.Hash().String(), nil
+		return tx, nil
 	default:
-		return "", fmt.Errorf("unsupported method")
+		return nil, fmt.Errorf("unsupported method")
 	}
 }
 
