@@ -29,6 +29,8 @@ func (c *FeralfileExhibitionV1Contract) Deploy(wallet *ethereum.Wallet, argument
 		Curator      common.Address  `json:"curator"`
 		MaxEdition   ethereum.BigInt `json:"max_edition"`
 		BasePrice    ethereum.BigInt `json:"base_price"`
+		RoyalityBPS  ethereum.BigInt `json:"royaloty_bps"`
+		ContractURI  string          `json:"contract_uri"`
 		TokenBaseURI string          `json:"token_base_uri"`
 	}
 
@@ -43,7 +45,8 @@ func (c *FeralfileExhibitionV1Contract) Deploy(wallet *ethereum.Wallet, argument
 
 	address, tx, _, err := DeployFeralfileExhibition(t, wallet.RPCClient(),
 		params.Title, params.Symbol, params.Curator,
-		&params.MaxEdition.Int, &params.BasePrice.Int, params.TokenBaseURI)
+		&params.MaxEdition.Int, &params.BasePrice.Int, &params.RoyalityBPS.Int,
+		params.ContractURI, params.TokenBaseURI)
 	if err != nil {
 		return "", "", err
 	}
@@ -99,7 +102,7 @@ func (c *FeralfileExhibitionV1Contract) Call(wallet *ethereum.Wallet, method, fu
 			return nil, err
 		}
 
-		tx, err := contract.SwapArtworkFromBitmarks(t,
+		tx, err := contract.SwapArtworkFromBitmark(t,
 			&params.ArtworkID.Int, &params.BitmarkID.Int, &params.EditionNumber.Int,
 			params.To, params.PrevProvenance, params.IPFSCID)
 		if err != nil {
