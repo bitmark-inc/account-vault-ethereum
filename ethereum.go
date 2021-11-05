@@ -6,12 +6,15 @@ import (
 	"math/big"
 
 	"github.com/ethereum/go-ethereum/accounts"
+	"github.com/ethereum/go-ethereum/accounts/abi"
 	"github.com/ethereum/go-ethereum/accounts/abi/bind"
 	"github.com/ethereum/go-ethereum/common"
 	"github.com/ethereum/go-ethereum/core/types"
+	"github.com/ethereum/go-ethereum/crypto"
 	"github.com/ethereum/go-ethereum/ethclient"
 	"github.com/ethereum/go-ethereum/params"
 	hdwallet "github.com/miguelmota/go-ethereum-hdwallet"
+	"golang.org/x/crypto/sha3"
 )
 
 const DefaultDerivationPath = "m/44'/60'/0'/0/0"
@@ -23,6 +26,7 @@ type Wallet struct {
 	rpcClient *ethclient.Client
 }
 
+// NewWallet creates a wallet from a given seed
 func NewWallet(seed []byte, network, rpcURL string) (*Wallet, error) {
 	chainID := params.RinkebyChainConfig.ChainID
 	if network == "livenet" {
@@ -52,6 +56,37 @@ func NewWallet(seed []byte, network, rpcURL string) (*Wallet, error) {
 	}, nil
 }
 
+// NewWallet creates a wallet from a given mnemonic phrases
+func NewWalletFromMnemonic(words, network, rpcURL string) (*Wallet, error) {
+	chainID := params.RinkebyChainConfig.ChainID
+	if network == "livenet" {
+		chainID = params.MainnetChainConfig.ChainID
+	}
+
+	wallet, err := hdwallet.NewFromMnemonic(words)
+	if err != nil {
+		return nil, err
+	}
+
+	path := hdwallet.MustParseDerivationPath(DefaultDerivationPath)
+	account, err := wallet.Derive(path, true)
+	if err != nil {
+		return nil, err
+	}
+	rpcClient, err := ethclient.Dial(rpcURL)
+	if err != nil {
+		return nil, err
+	}
+
+	return &Wallet{
+		chainID:   chainID,
+		wallet:    wallet,
+		account:   account,
+		rpcClient: rpcClient,
+	}, nil
+
+}
+
 // RPCClient returns the RPC client which is bound to the wallet
 func (w *Wallet) RPCClient() *ethclient.Client {
 	return w.rpcClient
@@ -60,6 +95,51 @@ func (w *Wallet) RPCClient() *ethclient.Client {
 // Account returns the ethereum account address
 func (w *Wallet) Account() string {
 	return w.account.Address.Hex()
+}
+
+// SignABIParameters sign packed function parameters and returns (r|v|s) in forms of hex string
+func (w *Wallet) SignABIParameters(ctx context.Context, types []string, arguments ...interface{}) (string, string, string, error) {
+	args := abi.Arguments{}
+
+	for _, t := range types {
+		ty, err := abi.NewType(t, "", nil)
+		if err != nil {
+			return "", "", "", err
+		}
+
+		args = append(args, abi.Argument{Type: ty})
+	}
+
+	argBytes, err := args.Pack(arguments...)
+	if err != nil {
+		return "", "", "", err
+	}
+
+	h := sha3.NewLegacyKeccak256()
+	h.Write(argBytes)
+	hash := h.Sum(nil)
+
+	validationMessage := append([]byte("\x19Ethereum Signed Message:\n32"), hash...)
+
+	h2 := sha3.NewLegacyKeccak256()
+	h2.Write(validationMessage)
+	hash2 := h2.Sum(nil)
+
+	privateKey, err := w.wallet.PrivateKey(w.account)
+	if err != nil {
+		return "", "", "", err
+	}
+	signature, err := crypto.Sign(hash2, privateKey)
+	if err != nil {
+		return "", "", "", err
+	}
+
+	r, s, v :=
+		fmt.Sprintf("%#x", signature[0:32]),
+		fmt.Sprintf("%#x", signature[32:64]),
+		fmt.Sprintf("%#x", signature[64]+27)
+
+	return r, s, v, nil
 }
 
 // TransferETH performs regular ethereum transferring
