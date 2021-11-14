@@ -44,8 +44,8 @@ func (c *FeralfileExhibitionV2Contract) Deploy(wallet *ethereum.Wallet, argument
 	}
 
 	address, tx, _, err := DeployFeralfileExhibitionV2(t, wallet.RPCClient(),
-		params.Name, params.Symbol, params.ExhibitionTitle,
-		&params.MaxEdition.Int, &params.RoyaltyBPS.Int, params.RoyaltyPayoutAddress,
+		params.Name, params.Symbol, &params.MaxEdition.Int,
+		&params.RoyaltyBPS.Int, params.RoyaltyPayoutAddress,
 		params.ContractURI, params.TokenBaseURI)
 	if err != nil {
 		return "", "", err
