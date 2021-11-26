@@ -100,6 +100,8 @@ func (c *FeralfileExhibitionV2Contract) Call(wallet *ethereum.Wallet, method, fu
 			return nil, err
 		}
 
+		t.GasLimit = 400000
+
 		tx, err := contract.SwapArtworkFromBitmark(t,
 			&params.ArtworkID.Int, &params.BitmarkID.Int, &params.EditionNumber.Int,
 			params.To, params.IPFSCID)
