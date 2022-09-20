@@ -28,7 +28,7 @@ type Wallet struct {
 
 // NewWallet creates a wallet from a given seed
 func NewWallet(seed []byte, network, rpcURL string) (*Wallet, error) {
-	chainID := params.RinkebyChainConfig.ChainID
+	chainID := params.GoerliChainConfig.ChainID
 	if network == "livenet" {
 		chainID = params.MainnetChainConfig.ChainID
 	}
