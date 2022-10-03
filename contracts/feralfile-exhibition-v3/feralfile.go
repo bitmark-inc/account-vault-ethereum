@@ -4,6 +4,8 @@ import (
 	"encoding/json"
 	"fmt"
 	"math/big"
+	"strconv"
+	"unsafe"
 
 	"github.com/ethereum/go-ethereum/common"
 	"github.com/ethereum/go-ethereum/core/types"
@@ -100,17 +102,18 @@ func (c *FeralfileExhibitionV3Contract) Call(wallet *ethereum.Wallet, method, fu
 			return nil, err
 		}
 
-		t.GasLimit = 400000
+		t.GasLimit = uint64(400000 * len(params))
 
 		mintParams := make([]FeralfileExhibitionV3MintArtworkParam, 0)
 
 		for _, v := range params {
+			value := v
 			mintParams = append(mintParams, FeralfileExhibitionV3MintArtworkParam{
-				ArtworkID: &v.ArtworkID.Int,
-				Edition:   &v.EditionNumber.Int,
-				Artist:    v.Artist,
-				Owner:     v.Owner,
-				IpfsCID:   v.IPFSCID,
+				ArtworkID: &value.ArtworkID.Int,
+				Edition:   &value.EditionNumber.Int,
+				Artist:    value.Artist,
+				Owner:     value.Owner,
+				IpfsCID:   value.IPFSCID,
 			})
 		}
 
@@ -125,28 +128,32 @@ func (c *FeralfileExhibitionV3Contract) Call(wallet *ethereum.Wallet, method, fu
 			To        common.Address  `json:"to"`
 			TokenID   ethereum.BigInt `json:"token_id"`
 			Timestamp ethereum.BigInt `json:"timestamp"`
-			R         [32]byte        `json:"r"`
-			S         [32]byte        `json:"s"`
-			V         uint8           `json:"v"`
+			R         string          `json:"r"`
+			S         string          `json:"s"`
+			V         string          `json:"v"`
 		}
 
 		if err := json.Unmarshal(arguments, &params); err != nil {
 			return nil, err
 		}
 
-		t.GasLimit = 400000
+		t.GasLimit = uint64(400000 * len(params))
 
 		transferParams := make([]FeralfileExhibitionV3TransferArtworkParam, 0)
 
 		for _, v := range params {
+			value := v // closure issue in &
+			rVal := []byte(value.R)
+			sVal := []byte(value.S)
+			vVal, _ := strconv.ParseUint(v.V, 10, 8)
 			transferParams = append(transferParams, FeralfileExhibitionV3TransferArtworkParam{
-				From:      v.From,
-				To:        v.To,
-				TokenID:   &v.TokenID.Int,
-				Timestamp: &v.Timestamp.Int,
-				R:         v.R,
-				S:         v.S,
-				V:         v.V,
+				From:      value.From,
+				To:        value.To,
+				TokenID:   &value.TokenID.Int,
+				Timestamp: &value.Timestamp.Int,
+				R:         *(*[32]byte)(unsafe.Pointer(&rVal)),
+				S:         *(*[32]byte)(unsafe.Pointer(&sVal)),
+				V:         uint8(vVal),
 			})
 		}
 
