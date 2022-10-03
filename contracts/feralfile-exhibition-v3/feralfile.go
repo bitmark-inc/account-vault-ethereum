@@ -7,7 +7,6 @@ import (
 	"math/big"
 	"strconv"
 	"strings"
-	"unsafe"
 
 	"github.com/ethereum/go-ethereum/common"
 	"github.com/ethereum/go-ethereum/core/types"
@@ -148,13 +147,17 @@ func (c *FeralfileExhibitionV3Contract) Call(wallet *ethereum.Wallet, method, fu
 			rVal, _ := hex.DecodeString(strings.Replace(value.R, "0x", "", -1))
 			sVal, _ := hex.DecodeString(strings.Replace(value.S, "0x", "", -1))
 			vVal, _ := strconv.ParseUint(strings.Replace(value.V, "0x", "", -1), 16, 64)
+			var r32Val [32]byte
+			var s32Val [32]byte
+			copy(r32Val[:], rVal)
+			copy(s32Val[:], sVal)
 			transferParams = append(transferParams, FeralfileExhibitionV3TransferArtworkParam{
 				From:      value.From,
 				To:        value.To,
 				TokenID:   &value.TokenID.Int,
 				Timestamp: &value.Timestamp.Int,
-				R:         *(*[32]byte)(unsafe.Pointer(&rVal)),
-				S:         *(*[32]byte)(unsafe.Pointer(&sVal)),
+				R:         r32Val,
+				S:         s32Val,
 				V:         uint8(vVal),
 			})
 		}
