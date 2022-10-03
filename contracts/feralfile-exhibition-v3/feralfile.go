@@ -70,7 +70,7 @@ func (c *FeralfileExhibitionV3Contract) Call(wallet *ethereum.Wallet, method, fu
 	t.NoSend = noSend
 
 	switch method {
-	case "create_artwork":
+	case "register_artworks":
 		var params struct {
 			Fingerprint string `json:"fingerprint"`
 			Title       string `json:"title"`
@@ -89,7 +89,7 @@ func (c *FeralfileExhibitionV3Contract) Call(wallet *ethereum.Wallet, method, fu
 			return nil, err
 		}
 		return tx, err
-	case "batch_mint":
+	case "mint_editions":
 		var params []struct {
 			ArtworkID     ethereum.BigInt `json:"artwork_id"`
 			EditionNumber ethereum.BigInt `json:"edition_number"`
