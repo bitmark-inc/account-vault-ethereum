@@ -1,10 +1,12 @@
 package feralfilev3
 
 import (
+	"encoding/hex"
 	"encoding/json"
 	"fmt"
 	"math/big"
 	"strconv"
+	"strings"
 	"unsafe"
 
 	"github.com/ethereum/go-ethereum/common"
@@ -143,9 +145,9 @@ func (c *FeralfileExhibitionV3Contract) Call(wallet *ethereum.Wallet, method, fu
 
 		for _, v := range params {
 			value := v // closure issue in &
-			rVal := []byte(value.R)
-			sVal := []byte(value.S)
-			vVal, _ := strconv.ParseUint(v.V, 10, 8)
+			rVal, _ := hex.DecodeString(strings.Replace(value.R, "0x", "", -1))
+			sVal, _ := hex.DecodeString(strings.Replace(value.S, "0x", "", -1))
+			vVal, _ := strconv.ParseUint(strings.Replace(value.V, "0x", "", -1), 16, 64)
 			transferParams = append(transferParams, FeralfileExhibitionV3TransferArtworkParam{
 				From:      value.From,
 				To:        value.To,
