@@ -3,6 +3,7 @@ package feralfilev3
 import (
 	"encoding/hex"
 	"encoding/json"
+	"errors"
 	"fmt"
 	"math/big"
 	"strconv"
@@ -108,13 +109,15 @@ func (c *FeralfileExhibitionV3Contract) Call(wallet *ethereum.Wallet, method, fu
 		mintParams := make([]FeralfileExhibitionV3MintArtworkParam, 0)
 
 		for _, v := range params {
-			value := v
+			artworkID := v.ArtworkID.Int
+			editionNumber := v.EditionNumber.Int
+
 			mintParams = append(mintParams, FeralfileExhibitionV3MintArtworkParam{
-				ArtworkID: &value.ArtworkID.Int,
-				Edition:   &value.EditionNumber.Int,
-				Artist:    value.Artist,
-				Owner:     value.Owner,
-				IpfsCID:   value.IPFSCID,
+				ArtworkID: &artworkID,
+				Edition:   &editionNumber,
+				Artist:    v.Artist,
+				Owner:     v.Owner,
+				IpfsCID:   v.IPFSCID,
 			})
 		}
 
@@ -143,19 +146,33 @@ func (c *FeralfileExhibitionV3Contract) Call(wallet *ethereum.Wallet, method, fu
 		transferParams := make([]FeralfileExhibitionV3TransferArtworkParam, 0)
 
 		for _, v := range params {
-			value := v // closure issue in &
-			rVal, _ := hex.DecodeString(strings.Replace(value.R, "0x", "", -1))
-			sVal, _ := hex.DecodeString(strings.Replace(value.S, "0x", "", -1))
-			vVal, _ := strconv.ParseUint(strings.Replace(value.V, "0x", "", -1), 16, 64)
+			tokenID := v.TokenID.Int
+			timestamp := v.Timestamp.Int
+			rVal, err := hex.DecodeString(strings.Replace(v.R, "0x", "", -1))
+			if err != nil {
+				return nil, err
+			}
+			sVal, err := hex.DecodeString(strings.Replace(v.S, "0x", "", -1))
+			if err != nil {
+				return nil, err
+			}
+			vVal, err := strconv.ParseUint(strings.Replace(v.V, "0x", "", -1), 16, 64)
+			if err != nil {
+				return nil, err
+			}
+			if len(rVal) != 32 || len(sVal) != 32 {
+				return nil, errors.New("required signature length is 32")
+			}
 			var r32Val [32]byte
 			var s32Val [32]byte
 			copy(r32Val[:], rVal)
 			copy(s32Val[:], sVal)
+
 			transferParams = append(transferParams, FeralfileExhibitionV3TransferArtworkParam{
-				From:      value.From,
-				To:        value.To,
-				TokenID:   &value.TokenID.Int,
-				Timestamp: &value.Timestamp.Int,
+				From:      v.From,
+				To:        v.To,
+				TokenID:   &tokenID,
+				Timestamp: &timestamp,
 				R:         r32Val,
 				S:         s32Val,
 				V:         uint8(vVal),
