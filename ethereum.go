@@ -40,6 +40,7 @@ func NewWallet(seed []byte, network, rpcURL string) (*Wallet, error) {
 
 	path := hdwallet.MustParseDerivationPath(DefaultDerivationPath)
 	account, err := wallet.Derive(path, true)
+
 	if err != nil {
 		return nil, err
 	}
