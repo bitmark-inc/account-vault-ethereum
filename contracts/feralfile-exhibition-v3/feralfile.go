@@ -73,7 +73,7 @@ func (c *FeralfileExhibitionV3Contract) Call(wallet *ethereum.Wallet, method, fu
 
 	switch method {
 	case "register_artworks":
-		var params struct {
+		var params []struct {
 			Fingerprint string `json:"fingerprint"`
 			Title       string `json:"title"`
 			ArtistName  string `json:"artist_name"`
@@ -84,9 +84,18 @@ func (c *FeralfileExhibitionV3Contract) Call(wallet *ethereum.Wallet, method, fu
 			return nil, err
 		}
 
-		tx, err := contract.CreateArtwork(t, params.Fingerprint,
-			params.Title, params.ArtistName,
-			big.NewInt(params.EditionSize))
+		artworkParams := make([]FeralfileExhibitionV3Artwork, 0)
+
+		for _, v := range params {
+			artworkParams = append(artworkParams, FeralfileExhibitionV3Artwork{
+				Title:       v.Title,
+				ArtistName:  v.ArtistName,
+				Fingerprint: v.Fingerprint,
+				EditionSize: big.NewInt(v.EditionSize),
+			})
+		}
+
+		tx, err := contract.CreateArtworks(t, artworkParams)
 		if err != nil {
 			return nil, err
 		}
