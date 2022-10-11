@@ -121,7 +121,7 @@ func (c *FeralfileExhibitionV2Contract) Call(wallet *ethereum.Wallet, method, fu
 		t.GasLimit = 120000
 
 		tx, err := contract.SafeTransferFrom(t,
-			t.From, params.To, &params.TokenID.Int)
+			common.HexToAddress(wallet.Account()), params.To, &params.TokenID.Int)
 		if err != nil {
 			return nil, err
 		}
