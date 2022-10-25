@@ -55,7 +55,7 @@ func (c *FeralfileExhibitionV2Contract) Deploy(wallet *ethereum.Wallet, argument
 }
 
 // Call is the entry function for account vault to interact with a smart contract.
-func (c *FeralfileExhibitionV2Contract) Call(wallet *ethereum.Wallet, method, fund string, arguments json.RawMessage, noSend bool, customizeGasPriceInWei *int64) (*types.Transaction, error) {
+func (c *FeralfileExhibitionV2Contract) Call(wallet *ethereum.Wallet, method, fund string, arguments json.RawMessage, noSend bool, customizeGasPriceInWei *int64, customizedNonce *uint64) (*types.Transaction, error) {
 	contract, err := NewFeralfileExhibitionV2(common.HexToAddress(c.contractAddress), wallet.RPCClient())
 	if err != nil {
 		return nil, err
@@ -67,8 +67,12 @@ func (c *FeralfileExhibitionV2Contract) Call(wallet *ethereum.Wallet, method, fu
 	}
 
 	t.NoSend = noSend
-	if customizeGasPriceInWei != nil {
+	if customizeGasPriceInWei != nil && *customizeGasPriceInWei != 0 {
 		t.GasPrice = big.NewInt(*customizeGasPriceInWei * params.Wei)
+	}
+
+	if customizedNonce != nil {
+		t.Nonce = big.NewInt(int64(*customizedNonce))
 	}
 
 	switch method {
