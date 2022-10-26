@@ -11,8 +11,13 @@ import (
 
 	"github.com/ethereum/go-ethereum/common"
 	"github.com/ethereum/go-ethereum/core/types"
+	"github.com/ethereum/go-ethereum/params"
 
 	ethereum "github.com/bitmark-inc/account-vault-ethereum"
+)
+
+const (
+	GasLimitForAuthTransfer = 130000
 )
 
 type FeralfileExhibitionV3Contract struct {
@@ -58,7 +63,7 @@ func (c *FeralfileExhibitionV3Contract) Deploy(wallet *ethereum.Wallet, argument
 }
 
 // Call is the entry function for account vault to interact with a smart contract.
-func (c *FeralfileExhibitionV3Contract) Call(wallet *ethereum.Wallet, method, fund string, arguments json.RawMessage, noSend bool) (*types.Transaction, error) {
+func (c *FeralfileExhibitionV3Contract) Call(wallet *ethereum.Wallet, method, fund string, arguments json.RawMessage, noSend bool, customizeGasPriceInWei *int64, customizedNonce *uint64) (*types.Transaction, error) {
 	contract, err := NewFeralfileExhibitionV3(common.HexToAddress(c.contractAddress), wallet.RPCClient())
 	if err != nil {
 		return nil, err
@@ -70,6 +75,13 @@ func (c *FeralfileExhibitionV3Contract) Call(wallet *ethereum.Wallet, method, fu
 	}
 
 	t.NoSend = noSend
+	if customizeGasPriceInWei != nil && *customizeGasPriceInWei != 0 {
+		t.GasPrice = big.NewInt(*customizeGasPriceInWei * params.Wei)
+	}
+
+	if customizedNonce != nil {
+		t.Nonce = big.NewInt(int64(*customizedNonce))
+	}
 
 	switch method {
 	case "register_artworks":
@@ -150,7 +162,7 @@ func (c *FeralfileExhibitionV3Contract) Call(wallet *ethereum.Wallet, method, fu
 			return nil, err
 		}
 
-		t.GasLimit = uint64(400000 * len(params))
+		t.GasLimit = uint64(GasLimitForAuthTransfer * len(params))
 
 		transferParams := make([]FeralfileExhibitionV3TransferArtworkParam, 0)
 

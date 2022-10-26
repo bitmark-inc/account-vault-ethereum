@@ -144,11 +144,18 @@ func (w *Wallet) SignABIParameters(ctx context.Context, types []string, argument
 }
 
 // TransferETH performs regular ethereum transferring
-func (w *Wallet) TransferETH(ctx context.Context, to string, amount string, customizeGasPriceInWei int64) (string, error) {
+func (w *Wallet) TransferETH(ctx context.Context, to string, amount string, customizeGasPriceInWei *int64, customizedNonce *uint64) (string, error) {
 	account := w.account
-	nonce, err := w.rpcClient.PendingNonceAt(ctx, account.Address)
-	if err != nil {
-		return "", err
+
+	var nonce uint64
+	if customizedNonce == nil {
+		n, err := w.rpcClient.PendingNonceAt(ctx, account.Address)
+		if err != nil {
+			return "", err
+		}
+		nonce = n
+	} else {
+		nonce = *customizedNonce
 	}
 
 	value, ok := big.NewInt(0).SetString(amount, 0)
@@ -161,9 +168,8 @@ func (w *Wallet) TransferETH(ctx context.Context, to string, amount string, cust
 	gasLimit := uint64(21000)
 
 	var gasPrice *big.Int
-
-	if customizeGasPriceInWei != 0 {
-		gasPrice = big.NewInt(customizeGasPriceInWei * params.Wei)
+	if customizeGasPriceInWei != nil && *customizeGasPriceInWei != 0 {
+		gasPrice = big.NewInt(*customizeGasPriceInWei * params.Wei)
 	} else {
 		var err error
 		gasPrice, err = w.rpcClient.SuggestGasPrice(ctx)
