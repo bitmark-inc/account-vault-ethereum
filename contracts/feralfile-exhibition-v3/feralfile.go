@@ -158,7 +158,7 @@ func (c *FeralfileExhibitionV3Contract) Call(wallet *ethereum.Wallet, method, fu
 			return nil, err
 		}
 
-		t.GasLimit = uint64(400000 * len(params))
+		t.GasLimit = uint64(130000 * len(params))
 
 		transferParams := make([]FeralfileExhibitionV3TransferArtworkParam, 0)
 
