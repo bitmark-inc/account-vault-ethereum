@@ -16,6 +16,10 @@ import (
 	ethereum "github.com/bitmark-inc/account-vault-ethereum"
 )
 
+const (
+	GasLimitForAuthTransfer = 130000
+)
+
 type FeralfileExhibitionV3Contract struct {
 	contractAddress string
 }
@@ -158,7 +162,7 @@ func (c *FeralfileExhibitionV3Contract) Call(wallet *ethereum.Wallet, method, fu
 			return nil, err
 		}
 
-		t.GasLimit = uint64(130000 * len(params))
+		t.GasLimit = uint64(GasLimitForAuthTransfer * len(params))
 
 		transferParams := make([]FeralfileExhibitionV3TransferArtworkParam, 0)
 
