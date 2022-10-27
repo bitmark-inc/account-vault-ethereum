@@ -33,14 +33,15 @@ func FeralfileExhibitionV3ContractFactory(contractAddress string) ethereum.Contr
 // Deploy deploys the smart contract to ethereum blockchain
 func (c *FeralfileExhibitionV3Contract) Deploy(wallet *ethereum.Wallet, arguments json.RawMessage) (string, string, error) {
 	var params struct {
-		Name                 string          `json:"Name"`
+		Name                 string          `json:"name"`
 		Symbol               string          `json:"symbol"`
-		ExhibitionTitle      string          `json:"exhibition_title"`
-		MaxEdition           ethereum.BigInt `json:"max_edition"`
+		VersionCode          string          `json:"version_code"`
 		RoyaltyBPS           ethereum.BigInt `json:"royalty_bps"`
 		RoyaltyPayoutAddress common.Address  `json:"royalty_payout_address"`
 		ContractURI          string          `json:"contract_uri"`
 		TokenBaseURI         string          `json:"token_base_uri"`
+		IsBurnable           bool            `json:"is_burnable"`
+		IsBridgeable         bool            `json:"is_bridgeable"`
 	}
 
 	if err := json.Unmarshal(arguments, &params); err != nil {
@@ -53,9 +54,9 @@ func (c *FeralfileExhibitionV3Contract) Deploy(wallet *ethereum.Wallet, argument
 	}
 
 	address, tx, _, err := DeployFeralfileExhibitionV3(t, wallet.RPCClient(),
-		params.Name, params.Symbol, &params.MaxEdition.Int,
+		params.Name, params.Symbol, params.VersionCode,
 		&params.RoyaltyBPS.Int, params.RoyaltyPayoutAddress,
-		params.ContractURI, params.TokenBaseURI)
+		params.ContractURI, params.TokenBaseURI, params.IsBurnable, params.IsBridgeable)
 	if err != nil {
 		return "", "", err
 	}
@@ -90,6 +91,8 @@ func (c *FeralfileExhibitionV3Contract) Call(wallet *ethereum.Wallet, method, fu
 			Title       string `json:"title"`
 			ArtistName  string `json:"artist_name"`
 			EditionSize int64  `json:"edition_size"`
+			AeAmount    int64  `json:"ae_amount"`
+			PpAmount    int64  `json:"pp_amount"`
 		}
 
 		if err := json.Unmarshal(arguments, &params); err != nil {
@@ -104,6 +107,8 @@ func (c *FeralfileExhibitionV3Contract) Call(wallet *ethereum.Wallet, method, fu
 				ArtistName:  v.ArtistName,
 				Fingerprint: v.Fingerprint,
 				EditionSize: big.NewInt(v.EditionSize),
+				AeAmount:    big.NewInt(v.AeAmount),
+				PpAmount:    big.NewInt(v.PpAmount),
 			})
 		}
 
@@ -201,6 +206,24 @@ func (c *FeralfileExhibitionV3Contract) Call(wallet *ethereum.Wallet, method, fu
 		}
 
 		tx, err := contract.AuthorizedTransfer(t, transferParams)
+		if err != nil {
+			return nil, err
+		}
+		return tx, nil
+	case "burn_editions":
+		var params []ethereum.BigInt
+
+		if err := json.Unmarshal(arguments, &params); err != nil {
+			return nil, err
+		}
+
+		burnParams := make([]*big.Int, 0)
+		for _, v := range params {
+			tokenID := v.Int
+			burnParams = append(burnParams, &tokenID)
+		}
+
+		tx, err := contract.BurnEditions(t, burnParams)
 		if err != nil {
 			return nil, err
 		}
