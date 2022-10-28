@@ -91,8 +91,8 @@ func (c *FeralfileExhibitionV3Contract) Call(wallet *ethereum.Wallet, method, fu
 			Title       string `json:"title"`
 			ArtistName  string `json:"artist_name"`
 			EditionSize int64  `json:"edition_size"`
-			AeAmount    int64  `json:"ae_amount"`
-			PpAmount    int64  `json:"pp_amount"`
+			AEAmount    int64  `json:"ae_amount"`
+			PPAmount    int64  `json:"pp_amount"`
 		}
 
 		if err := json.Unmarshal(arguments, &params); err != nil {
@@ -107,8 +107,8 @@ func (c *FeralfileExhibitionV3Contract) Call(wallet *ethereum.Wallet, method, fu
 				ArtistName:  v.ArtistName,
 				Fingerprint: v.Fingerprint,
 				EditionSize: big.NewInt(v.EditionSize),
-				AeAmount:    big.NewInt(v.AeAmount),
-				PpAmount:    big.NewInt(v.PpAmount),
+				AEAmount:    big.NewInt(v.AEAmount),
+				PPAmount:    big.NewInt(v.PPAmount),
 			})
 		}
 

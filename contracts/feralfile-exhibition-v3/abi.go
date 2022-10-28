@@ -35,8 +35,8 @@ type FeralfileExhibitionV3Artwork struct {
 	ArtistName  string
 	Fingerprint string
 	EditionSize *big.Int
-	AeAmount    *big.Int
-	PpAmount    *big.Int
+	AEAmount    *big.Int
+	PPAmount    *big.Int
 }
 
 // FeralfileExhibitionV3MintArtworkParam is an auto generated low-level Go binding around an user-defined struct.
@@ -309,8 +309,8 @@ func (_FeralfileExhibitionV3 *FeralfileExhibitionV3Caller) Artworks(opts *bind.C
 	ArtistName  string
 	Fingerprint string
 	EditionSize *big.Int
-	AeAmount    *big.Int
-	PpAmount    *big.Int
+	AEAmount    *big.Int
+	PPAmount    *big.Int
 }, error) {
 	var out []interface{}
 	err := _FeralfileExhibitionV3.contract.Call(opts, &out, "artworks", arg0)
@@ -320,8 +320,8 @@ func (_FeralfileExhibitionV3 *FeralfileExhibitionV3Caller) Artworks(opts *bind.C
 		ArtistName  string
 		Fingerprint string
 		EditionSize *big.Int
-		AeAmount    *big.Int
-		PpAmount    *big.Int
+		AEAmount    *big.Int
+		PPAmount    *big.Int
 	})
 	if err != nil {
 		return *outstruct, err
@@ -331,8 +331,8 @@ func (_FeralfileExhibitionV3 *FeralfileExhibitionV3Caller) Artworks(opts *bind.C
 	outstruct.ArtistName = *abi.ConvertType(out[1], new(string)).(*string)
 	outstruct.Fingerprint = *abi.ConvertType(out[2], new(string)).(*string)
 	outstruct.EditionSize = *abi.ConvertType(out[3], new(*big.Int)).(**big.Int)
-	outstruct.AeAmount = *abi.ConvertType(out[4], new(*big.Int)).(**big.Int)
-	outstruct.PpAmount = *abi.ConvertType(out[5], new(*big.Int)).(**big.Int)
+	outstruct.AEAmount = *abi.ConvertType(out[4], new(*big.Int)).(**big.Int)
+	outstruct.PPAmount = *abi.ConvertType(out[5], new(*big.Int)).(**big.Int)
 
 	return *outstruct, err
 
@@ -346,8 +346,8 @@ func (_FeralfileExhibitionV3 *FeralfileExhibitionV3Session) Artworks(arg0 *big.I
 	ArtistName  string
 	Fingerprint string
 	EditionSize *big.Int
-	AeAmount    *big.Int
-	PpAmount    *big.Int
+	AEAmount    *big.Int
+	PPAmount    *big.Int
 }, error) {
 	return _FeralfileExhibitionV3.Contract.Artworks(&_FeralfileExhibitionV3.CallOpts, arg0)
 }
@@ -360,8 +360,8 @@ func (_FeralfileExhibitionV3 *FeralfileExhibitionV3CallerSession) Artworks(arg0 
 	ArtistName  string
 	Fingerprint string
 	EditionSize *big.Int
-	AeAmount    *big.Int
-	PpAmount    *big.Int
+	AEAmount    *big.Int
+	PPAmount    *big.Int
 }, error) {
 	return _FeralfileExhibitionV3.Contract.Artworks(&_FeralfileExhibitionV3.CallOpts, arg0)
 }
