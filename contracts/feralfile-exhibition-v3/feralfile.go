@@ -17,7 +17,8 @@ import (
 )
 
 const (
-	GasLimitForAuthTransfer = 130000
+	GasLimitPerMint         = 450000
+	GasLimitPerAuthTransfer = 150000
 )
 
 type FeralfileExhibitionV3Contract struct {
@@ -129,7 +130,7 @@ func (c *FeralfileExhibitionV3Contract) Call(wallet *ethereum.Wallet, method, fu
 			return nil, err
 		}
 
-		t.GasLimit = uint64(400000 * len(params))
+		t.GasLimit = uint64(GasLimitPerMint * len(params))
 
 		mintParams := make([]FeralfileExhibitionV3MintArtworkParam, 0)
 
@@ -166,7 +167,7 @@ func (c *FeralfileExhibitionV3Contract) Call(wallet *ethereum.Wallet, method, fu
 			return nil, err
 		}
 
-		t.GasLimit = uint64(GasLimitForAuthTransfer * len(params))
+		t.GasLimit = uint64(GasLimitPerAuthTransfer * len(params))
 
 		transferParams := make([]FeralfileExhibitionV3TransferArtworkParam, 0)
 
