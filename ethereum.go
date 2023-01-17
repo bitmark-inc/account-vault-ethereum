@@ -2,6 +2,8 @@ package ethereum
 
 import (
 	"context"
+	"encoding/json"
+	"errors"
 	"fmt"
 	"math/big"
 
@@ -192,6 +194,38 @@ func (w *Wallet) TransferETH(ctx context.Context, to string, amount string, cust
 	return signedTx.Hash().String(), nil
 }
 
+// ApproveERC20Token performs approval ERC20 token for spender address
+func (w *Wallet) ApproveERC20Token(ctx context.Context, tokenAddr, spender, amount string, customizeGasPriceInWei *int64, customizedNonce *uint64) (*types.Transaction, error) {
+	if spender == "" || amount == "" {
+		return nil, errors.New("invalid parameter")
+	}
+
+	tokenContract, err := NewUSDCToken(common.HexToAddress(tokenAddr), w.RPCClient())
+	if err != nil {
+		return nil, err
+	}
+
+	t, err := w.Transactor()
+	if err != nil {
+		return nil, err
+	}
+
+	if customizeGasPriceInWei != nil && *customizeGasPriceInWei != 0 {
+		t.GasPrice = big.NewInt(*customizeGasPriceInWei * params.Wei)
+	}
+
+	if customizedNonce != nil {
+		t.Nonce = big.NewInt(int64(*customizedNonce))
+	}
+
+	value, ok := big.NewInt(0).SetString(amount, 0)
+	if !ok {
+		return nil, fmt.Errorf("can not set amount")
+	}
+
+	return tokenContract.Approve(t, common.HexToAddress(spender), value)
+}
+
 func (w *Wallet) Transactor() (*bind.TransactOpts, error) {
 	k, err := w.wallet.PrivateKey(w.account)
 	if err != nil {
@@ -199,4 +233,85 @@ func (w *Wallet) Transactor() (*bind.TransactOpts, error) {
 	}
 
 	return bind.NewKeyedTransactorWithChainID(k, w.chainID)
+}
+
+// TransferBatchToken performs regular ERC20 Token transferring
+func (w *Wallet) TransferBatchToken(ctx context.Context, contractAddress string, arguments json.RawMessage, noSend bool, customizeGasPriceInWei *int64, customizedNonce *uint64) (*types.Transaction, error) {
+	transferContract, err := NewTokenBatchTransfer(common.HexToAddress(contractAddress), w.RPCClient())
+	if err != nil {
+		return nil, err
+	}
+
+	t, err := w.Transactor()
+	if err != nil {
+		return nil, err
+	}
+
+	t.NoSend = noSend
+	if customizeGasPriceInWei != nil && *customizeGasPriceInWei != 0 {
+		t.GasPrice = big.NewInt(*customizeGasPriceInWei * params.Wei)
+	}
+
+	if customizedNonce != nil {
+		t.Nonce = big.NewInt(int64(*customizedNonce))
+	}
+
+	var param struct {
+		TokenOwner string `json:"token_owner"`
+		Recipients []struct {
+			Address string `json:"address"`
+			Amount  uint64 `json:"amount"`
+		} `json:"recipients"`
+	}
+
+	if err := json.Unmarshal(arguments, &param); err != nil {
+		return nil, err
+	}
+
+	// Checking allowance
+	tokenAddr, err := transferContract.Token(&bind.CallOpts{})
+	if err != nil {
+		return nil, err
+	}
+
+	tokenContract, err := NewUSDCToken(tokenAddr, w.RPCClient())
+	if err != nil {
+		return nil, err
+	}
+
+	balance, err := tokenContract.BalanceOf(&bind.CallOpts{}, common.HexToAddress(param.TokenOwner))
+	if err != nil {
+		return nil, err
+	}
+
+	allowance, err := tokenContract.Allowance(&bind.CallOpts{}, common.HexToAddress(param.TokenOwner), common.HexToAddress(contractAddress))
+	if err != nil {
+		return nil, err
+	}
+
+	amountParams := make([]*big.Int, 0)
+	tokenHolderParams := make([]common.Address, 0)
+	totalSendingAmount := uint64(0)
+	for _, v := range param.Recipients {
+		if v.Amount == 0 || v.Address == "" {
+			return nil, errors.New("empty amount or empty address parameter")
+		}
+		tokenHolderParams = append(tokenHolderParams, common.HexToAddress(v.Address))
+		amountParams = append(amountParams, big.NewInt(int64(v.Amount)))
+		totalSendingAmount += v.Amount
+	}
+
+	if balance.Uint64() < totalSendingAmount {
+		return nil, errors.New("token balance does not enough for transfer")
+	}
+
+	if allowance.Uint64() < totalSendingAmount {
+		return nil, errors.New("token allowance does not enough for transfer")
+	}
+
+	tx, err := transferContract.BatchTransferFrom(t, common.HexToAddress(param.TokenOwner), tokenHolderParams, amountParams)
+	if err != nil {
+		return nil, err
+	}
+	return tx, err
 }
