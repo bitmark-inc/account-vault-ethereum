@@ -194,13 +194,58 @@ func (w *Wallet) TransferETH(ctx context.Context, to string, amount string, cust
 	return signedTx.Hash().String(), nil
 }
 
+// GetEthereumBalance return ethereum balance at address
+func (w *Wallet) GetEthereumBalance(ctx context.Context) (string, error) {
+	balance, err := w.rpcClient.BalanceAt(ctx, w.account.Address, nil)
+	if err != nil {
+		return "", err
+	}
+	return balance.String(), nil
+}
+
+// GetERC20Balance return ERC20 Token balance at address
+func (w *Wallet) GetERC20Balance(ctx context.Context, tokenAddr string) (string, error) {
+	if tokenAddr == "" {
+		return "", errors.New("invalid address")
+	}
+
+	erc20TokenContract, err := NewERC20Token(common.HexToAddress(tokenAddr), w.RPCClient())
+	if err != nil {
+		return "", err
+	}
+
+	balance, err := erc20TokenContract.BalanceOf(&bind.CallOpts{}, w.account.Address)
+	if err != nil {
+		return "", err
+	}
+	return balance.String(), nil
+}
+
+// GetERC20Allowance return ERC20 token allowance amount at address
+func (w *Wallet) GetERC20Allowance(ctx context.Context, tokenAddr, spenderAddr string) (uint64, error) {
+	if tokenAddr == "" {
+		return 0, errors.New("invalid address")
+	}
+
+	erc20TokenContract, err := NewERC20Token(common.HexToAddress(tokenAddr), w.RPCClient())
+	if err != nil {
+		return 0, err
+	}
+
+	balance, err := erc20TokenContract.Allowance(&bind.CallOpts{}, w.account.Address, common.HexToAddress(spenderAddr))
+	if err != nil {
+		return 0, err
+	}
+	return balance.Uint64(), nil
+}
+
 // ApproveERC20Token performs approval ERC20 token for spender address
 func (w *Wallet) ApproveERC20Token(ctx context.Context, tokenAddr, spender, amount string, customizeGasPriceInWei *int64, customizedNonce *uint64) (*types.Transaction, error) {
 	if spender == "" || amount == "" {
 		return nil, errors.New("invalid parameter")
 	}
 
-	tokenContract, err := NewUSDCToken(common.HexToAddress(tokenAddr), w.RPCClient())
+	erc20TokenContract, err := NewERC20Token(common.HexToAddress(tokenAddr), w.RPCClient())
 	if err != nil {
 		return nil, err
 	}
@@ -223,7 +268,7 @@ func (w *Wallet) ApproveERC20Token(ctx context.Context, tokenAddr, spender, amou
 		return nil, fmt.Errorf("can not set amount")
 	}
 
-	return tokenContract.Approve(t, common.HexToAddress(spender), value)
+	return erc20TokenContract.Approve(t, common.HexToAddress(spender), value)
 }
 
 func (w *Wallet) Transactor() (*bind.TransactOpts, error) {
@@ -268,23 +313,25 @@ func (w *Wallet) TransferBatchToken(ctx context.Context, contractAddress string,
 		return nil, err
 	}
 
+	emptyOpts := &bind.CallOpts{}
+
 	// Checking allowance
-	tokenAddr, err := transferContract.Token(&bind.CallOpts{})
+	tokenAddr, err := transferContract.Token(emptyOpts)
 	if err != nil {
 		return nil, err
 	}
 
-	tokenContract, err := NewUSDCToken(tokenAddr, w.RPCClient())
+	tokenContract, err := NewERC20Token(tokenAddr, w.RPCClient())
 	if err != nil {
 		return nil, err
 	}
 
-	balance, err := tokenContract.BalanceOf(&bind.CallOpts{}, common.HexToAddress(param.TokenOwner))
+	balance, err := tokenContract.BalanceOf(emptyOpts, common.HexToAddress(param.TokenOwner))
 	if err != nil {
 		return nil, err
 	}
 
-	allowance, err := tokenContract.Allowance(&bind.CallOpts{}, common.HexToAddress(param.TokenOwner), common.HexToAddress(contractAddress))
+	allowance, err := tokenContract.Allowance(emptyOpts, common.HexToAddress(param.TokenOwner), common.HexToAddress(contractAddress))
 	if err != nil {
 		return nil, err
 	}
