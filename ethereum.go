@@ -222,21 +222,21 @@ func (w *Wallet) GetERC20Balance(ctx context.Context, tokenAddr string) (string,
 }
 
 // GetERC20Allowance return ERC20 token allowance amount at address
-func (w *Wallet) GetERC20Allowance(ctx context.Context, tokenAddr, spenderAddr string) (uint64, error) {
+func (w *Wallet) GetERC20Allowance(ctx context.Context, tokenAddr, spenderAddr string) (string, error) {
 	if tokenAddr == "" {
-		return 0, errors.New("invalid address")
+		return "", errors.New("invalid address")
 	}
 
 	erc20TokenContract, err := NewERC20Token(common.HexToAddress(tokenAddr), w.RPCClient())
 	if err != nil {
-		return 0, err
+		return "", err
 	}
 
 	balance, err := erc20TokenContract.Allowance(&bind.CallOpts{}, w.account.Address, common.HexToAddress(spenderAddr))
 	if err != nil {
-		return 0, err
+		return "", err
 	}
-	return balance.Uint64(), nil
+	return balance.String(), nil
 }
 
 // ApproveERC20Token performs approval ERC20 token for spender address
