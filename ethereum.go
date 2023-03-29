@@ -30,7 +30,7 @@ type Wallet struct {
 
 // NewWallet creates a wallet from a given seed
 func NewWallet(seed []byte, network, rpcURL string) (*Wallet, error) {
-	chainID := params.GoerliChainConfig.ChainID
+	chainID := params.SepoliaChainConfig.ChainID
 	if network == "livenet" {
 		chainID = params.MainnetChainConfig.ChainID
 	}
@@ -61,7 +61,7 @@ func NewWallet(seed []byte, network, rpcURL string) (*Wallet, error) {
 
 // NewWallet creates a wallet from a given mnemonic phrases
 func NewWalletFromMnemonic(words, network, rpcURL string) (*Wallet, error) {
-	chainID := params.RinkebyChainConfig.ChainID
+	chainID := params.SepoliaChainConfig.ChainID
 	if network == "livenet" {
 		chainID = params.MainnetChainConfig.ChainID
 	}
