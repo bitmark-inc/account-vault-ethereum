@@ -4,7 +4,9 @@ import (
 	"encoding/json"
 	"fmt"
 	"math/big"
+	"strings"
 
+	"github.com/ethereum/go-ethereum/accounts/abi"
 	"github.com/ethereum/go-ethereum/common"
 	"github.com/ethereum/go-ethereum/core/types"
 	"github.com/ethereum/go-ethereum/params"
@@ -120,6 +122,22 @@ func (c *FeralfileExhibitionV1Contract) Call(wallet *ethereum.Wallet, method, fu
 	default:
 		return nil, fmt.Errorf("unsupported method")
 	}
+}
+
+func (c *FeralfileExhibitionV1Contract) ParamEncoder(method string, arguments json.RawMessage) ([]byte, error) {
+	parsed, err := abi.JSON(strings.NewReader(FeralfileExhibitionABI))
+	if err != nil {
+		return nil, err
+	}
+	var params []interface{}
+	if err := json.Unmarshal(arguments, &params); err != nil {
+		return nil, err
+	}
+	input, err := parsed.Pack(method, params...)
+	if err != nil {
+		return nil, err
+	}
+	return input, nil
 }
 
 func init() {
