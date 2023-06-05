@@ -7,6 +7,7 @@ import (
 	"fmt"
 	"math/big"
 
+	ethereum "github.com/ethereum/go-ethereum"
 	"github.com/ethereum/go-ethereum/accounts"
 	"github.com/ethereum/go-ethereum/accounts/abi"
 	"github.com/ethereum/go-ethereum/accounts/abi/bind"
@@ -164,10 +165,8 @@ func (w *Wallet) TransferETH(ctx context.Context, to string, amount string, cust
 	if !ok {
 		return "", fmt.Errorf("can not set amount")
 	}
+	fromAddress := account.Address
 	toAddress := common.HexToAddress(to)
-
-	// fixed gas limit for regular transferring
-	gasLimit := uint64(21000)
 
 	var gasPrice *big.Int
 	if customizeGasPriceInWei != nil && *customizeGasPriceInWei != 0 {
@@ -180,7 +179,16 @@ func (w *Wallet) TransferETH(ctx context.Context, to string, amount string, cust
 		}
 	}
 
-	tx := types.NewTransaction(nonce, toAddress, value, gasLimit, gasPrice, nil)
+	egl, err := w.rpcClient.EstimateGas(ctx, ethereum.CallMsg{
+		From:  fromAddress,
+		To:    &toAddress,
+		Value: value,
+	})
+	if err != nil {
+		return "", err
+	}
+
+	tx := types.NewTransaction(nonce, toAddress, value, egl, gasPrice, nil)
 
 	signedTx, err := w.wallet.SignTx(account, tx, nil)
 	if err != nil {
