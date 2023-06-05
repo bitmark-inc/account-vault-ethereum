@@ -239,15 +239,65 @@ func (c *FeralfileExhibitionV3Contract) ParamEncoder(method string, arguments js
 	if err != nil {
 		return nil, err
 	}
-	var params []interface{}
-	if err := json.Unmarshal(arguments, &params); err != nil {
-		return nil, err
+
+	switch method {
+	case "authorizedTransfer":
+		var params []struct {
+			From      common.Address  `json:"from"`
+			To        common.Address  `json:"to"`
+			TokenID   ethereum.BigInt `json:"token_id"`
+			Timestamp ethereum.BigInt `json:"timestamp"`
+			R         string          `json:"r"`
+			S         string          `json:"s"`
+			V         string          `json:"v"`
+		}
+
+		if err := json.Unmarshal(arguments, &params); err != nil {
+			return nil, err
+		}
+
+		transferParams := make([]FeralfileExhibitionV3TransferArtworkParam, 0)
+		for _, v := range params {
+			tokenID := v.TokenID.Int
+			timestamp := v.Timestamp.Int
+			rVal, err := hex.DecodeString(strings.Replace(v.R, "0x", "", -1))
+			if err != nil {
+				return nil, err
+			}
+			sVal, err := hex.DecodeString(strings.Replace(v.S, "0x", "", -1))
+			if err != nil {
+				return nil, err
+			}
+			vVal, err := strconv.ParseUint(strings.Replace(v.V, "0x", "", -1), 16, 64)
+			if err != nil {
+				return nil, err
+			}
+			if len(rVal) != 32 || len(sVal) != 32 {
+				return nil, errors.New("required signature length is 32")
+			}
+			var r32Val [32]byte
+			var s32Val [32]byte
+			copy(r32Val[:], rVal)
+			copy(s32Val[:], sVal)
+
+			transferParams = append(transferParams, FeralfileExhibitionV3TransferArtworkParam{
+				From:      v.From,
+				To:        v.To,
+				TokenID:   &tokenID,
+				Timestamp: &timestamp,
+				R:         r32Val,
+				S:         s32Val,
+				V:         uint8(vVal),
+			})
+		}
+		input, err := parsed.Pack(method, transferParams)
+		if err != nil {
+			return nil, err
+		}
+		return input, nil
+	default:
+		return nil, fmt.Errorf("unsupported method")
 	}
-	input, err := parsed.Pack(method, params...)
-	if err != nil {
-		return nil, err
-	}
-	return input, nil
 }
 
 func init() {
