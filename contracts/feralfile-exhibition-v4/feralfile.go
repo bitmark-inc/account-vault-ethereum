@@ -119,7 +119,7 @@ func (c *FeralfileExhibitionV4Contract) ParamEncoder(method string, arguments js
 	}
 
 	switch method {
-	case "buyArtwork":
+	case "buyArtworks":
 		var params struct {
 			SaleData IFeralfileSaleDataSaleData
 			R        string
