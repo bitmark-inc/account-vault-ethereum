@@ -102,11 +102,20 @@ func (w *Wallet) Account() string {
 }
 
 // SignABIParameters sign packed function parameters and returns (r|v|s) in forms of hex string
-func (w *Wallet) SignABIParameters(ctx context.Context, types []string, arguments ...interface{}) (string, string, string, error) {
+func (w *Wallet) SignABIParameters(ctx context.Context, types []interface{}, arguments ...interface{}) (string, string, string, error) {
+	abiTypes, abiTypesArguments, parsedValue, err := parseABIParams(types, arguments)
+	if err != nil {
+		return "", "", "", err
+	}
+
 	args := abi.Arguments{}
 
-	for _, t := range types {
-		ty, err := abi.NewType(t, "", nil)
+	for i, t := range abiTypes {
+		var am []abi.ArgumentMarshaling
+		if abiTypesArguments[i] != nil {
+			am = *abiTypesArguments[i]
+		}
+		ty, err := abi.NewType(t, "", am)
 		if err != nil {
 			return "", "", "", err
 		}
@@ -114,7 +123,7 @@ func (w *Wallet) SignABIParameters(ctx context.Context, types []string, argument
 		args = append(args, abi.Argument{Type: ty})
 	}
 
-	argBytes, err := args.Pack(arguments...)
+	argBytes, err := args.Pack(parsedValue...)
 	if err != nil {
 		return "", "", "", err
 	}
