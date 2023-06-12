@@ -51,7 +51,7 @@ func TestSignABIParametersWithComplexStruct(t *testing.T) {
 								"tuple": map[string]interface{}{
 									"recipient": "address",
 									"bps":       "uint256",
-									"ABI_TUPLE_KEY_ORDER": []string{
+									"ABI_TUPLE_KEY_ORDER": []interface{}{
 										"recipient", "bps",
 									},
 								},
@@ -59,7 +59,7 @@ func TestSignABIParametersWithComplexStruct(t *testing.T) {
 						},
 					},
 					"payByVaultContract": "bool",
-					"ABI_TUPLE_KEY_ORDER": []string{
+					"ABI_TUPLE_KEY_ORDER": []interface{}{
 						"price", "cost", "expiryTime", "destination", "tokenIds", "revenueShares", "payByVaultContract",
 					},
 				},

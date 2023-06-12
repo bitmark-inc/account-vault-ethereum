@@ -3,6 +3,7 @@ package ethereum
 import (
 	"encoding/hex"
 	"errors"
+	"fmt"
 	"math/big"
 	"reflect"
 	"strings"
@@ -48,10 +49,12 @@ func parseABIParams(types []interface{}, values []interface{}) ([]string, []*[]a
 						return nil, nil, nil, errors.New("tuple structure should always define key ABI_TUPLE_KEY_ORDER")
 					}
 
-					if _, ok := structProperties[ABI_TUPLE_KEY_ORDER].([]string); !ok {
-						return nil, nil, nil, errors.New("failed to parse tuple ABI_TUPLE_KEY_ORDER to []string")
+					fmt.Println(structProperties[ABI_TUPLE_KEY_ORDER])
+
+					if _, ok := structProperties[ABI_TUPLE_KEY_ORDER].([]interface{}); !ok {
+						return nil, nil, nil, errors.New("failed to parse tuple ABI_TUPLE_KEY_ORDER to []interface{}")
 					}
-					keyOrder := structProperties[ABI_TUPLE_KEY_ORDER].([]string)
+					keyOrder := structProperties[ABI_TUPLE_KEY_ORDER].([]interface{})
 
 					if len(keyOrder) != len(value) {
 						return nil, nil, nil, errors.New("tuple key order param missing")
@@ -65,14 +68,18 @@ func parseABIParams(types []interface{}, values []interface{}) ([]string, []*[]a
 					sv := make([]reflect.Value, len(keyOrder))
 
 					for j, key := range keyOrder {
-						structProperty := structProperties[key]
-						abiTypes, abiTypesArguments, parsedValue, err := parseABIParams([]interface{}{structProperty}, []interface{}{value[key]})
+						if _, ok := key.(string); !ok {
+							return nil, nil, nil, errors.New("failed to parse ABI_TUPLE_KEY_ORDER tuple key to string")
+						}
+						stringKey := key.(string)
+						structProperty := structProperties[stringKey]
+						abiTypes, abiTypesArguments, parsedValue, err := parseABIParams([]interface{}{structProperty}, []interface{}{value[stringKey]})
 						if err != nil {
 							return nil, nil, nil, err
 						}
 
 						abiType := abiTypes[0]
-						titleKey := strings.Title(key)
+						titleKey := strings.Title(stringKey)
 
 						// assign tuple arguments
 						if abiTypesArguments[0] == nil {
