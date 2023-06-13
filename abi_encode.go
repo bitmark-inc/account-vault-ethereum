@@ -3,7 +3,6 @@ package ethereum
 import (
 	"encoding/hex"
 	"errors"
-	"fmt"
 	"math/big"
 	"reflect"
 	"strings"
@@ -49,8 +48,6 @@ func parseABIParams(types []interface{}, values []interface{}) ([]string, []*[]a
 						return nil, nil, nil, errors.New("tuple structure should always define key ABI_TUPLE_KEY_ORDER")
 					}
 
-					fmt.Println(structProperties[ABI_TUPLE_KEY_ORDER])
-
 					if _, ok := structProperties[ABI_TUPLE_KEY_ORDER].([]interface{}); !ok {
 						return nil, nil, nil, errors.New("failed to parse tuple ABI_TUPLE_KEY_ORDER to []interface{}")
 					}
@@ -60,7 +57,7 @@ func parseABIParams(types []interface{}, values []interface{}) ([]string, []*[]a
 						return nil, nil, nil, errors.New("tuple key order param missing")
 					}
 
-					tupleArguments := make([]abi.ArgumentMarshaling, len(structProperties)-1)
+					tupleArguments := make([]abi.ArgumentMarshaling, len(keyOrder))
 
 					// create dynamic struct fields
 					sf := make([]reflect.StructField, len(keyOrder))
@@ -147,7 +144,7 @@ func parseABIParams(types []interface{}, values []interface{}) ([]string, []*[]a
 					abiTypesArgumentsResult[i] = abiTypesArguments[0]
 					parseValueResult[i] = elemSlice.Interface()
 				default:
-					return nil, nil, nil, errors.New("not support definition struct")
+					return nil, nil, nil, errors.New("not supported definition struct")
 				}
 			}
 		default:
@@ -163,7 +160,6 @@ func parseABIValue(abiType string, value interface{}) (interface{}, error) {
 		return nil, errors.New("can't parse value not in type string")
 	}
 	stringValue := value.(string)
-	// Todo: check value.(string) ok
 	var valuesResult interface{}
 	switch abiType {
 	case "address":
