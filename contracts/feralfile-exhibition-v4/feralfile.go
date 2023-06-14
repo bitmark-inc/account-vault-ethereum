@@ -107,6 +107,83 @@ func (c *FeralfileExhibitionV4Contract) Call(wallet *ethereum.Wallet, method, fu
 			return nil, err
 		}
 		return tx, nil
+	case "buyArtworks":
+		var params struct {
+			SaleData struct {
+				Price         ethereum.BigInt
+				Cost          ethereum.BigInt
+				ExpiryTime    ethereum.BigInt
+				Destination   common.Address
+				TokenIds      []ethereum.BigInt
+				RevenueShares [][]struct {
+					Recipient common.Address
+					Bps       ethereum.BigInt
+				}
+				PayByVaultContract bool
+			}
+			R string
+			S string
+			V string
+		}
+
+		if err := json.Unmarshal(arguments, &params); err != nil {
+			return nil, err
+		}
+
+		rVal, err := hex.DecodeString(strings.Replace(params.R, "0x", "", -1))
+		if err != nil {
+			return nil, err
+		}
+		sVal, err := hex.DecodeString(strings.Replace(params.S, "0x", "", -1))
+		if err != nil {
+			return nil, err
+		}
+		vVal, err := strconv.ParseUint(strings.Replace(params.V, "0x", "", -1), 16, 64)
+		if err != nil {
+			return nil, err
+		}
+		if len(rVal) != 32 || len(sVal) != 32 {
+			return nil, errors.New("required signature length is 32")
+		}
+		var r32Val [32]byte
+		var s32Val [32]byte
+		copy(r32Val[:], rVal)
+		copy(s32Val[:], sVal)
+
+		tokenIDs := make([]*big.Int, 0)
+		for _, v := range params.SaleData.TokenIds {
+			tokenID := v.Int
+			tokenIDs = append(tokenIDs, &tokenID)
+		}
+
+		revenueShares := make([][]IFeralfileSaleDataRevenueShare, 0)
+		for _, v := range params.SaleData.RevenueShares {
+			revenueShare := make([]IFeralfileSaleDataRevenueShare, 0)
+			for _, vv := range v {
+				bps := vv.Bps.Int
+				revenueShare = append(revenueShare, IFeralfileSaleDataRevenueShare{
+					Recipient: vv.Recipient,
+					Bps:       &bps,
+				})
+			}
+			revenueShares = append(revenueShares, revenueShare)
+		}
+
+		saleData := IFeralfileSaleDataSaleData{
+			Price:              &params.SaleData.Price.Int,
+			Cost:               &params.SaleData.Cost.Int,
+			ExpiryTime:         &params.SaleData.ExpiryTime.Int,
+			Destination:        params.SaleData.Destination,
+			TokenIds:           tokenIDs,
+			RevenueShares:      revenueShares,
+			PayByVaultContract: params.SaleData.PayByVaultContract,
+		}
+
+		tx, err := contract.BuyArtworks(t, r32Val, s32Val, uint8(vVal), saleData)
+		if err != nil {
+			return nil, err
+		}
+		return tx, nil
 	default:
 		return nil, fmt.Errorf("unsupported method")
 	}
