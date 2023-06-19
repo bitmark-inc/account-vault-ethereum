@@ -198,10 +198,21 @@ func (c *FeralfileExhibitionV4Contract) ParamEncoder(method string, arguments js
 	switch method {
 	case "buyArtworks":
 		var params struct {
-			SaleData IFeralfileSaleDataSaleData
-			R        string
-			S        string
-			V        string
+			SaleData struct {
+				Price         ethereum.BigInt
+				Cost          ethereum.BigInt
+				ExpiryTime    ethereum.BigInt
+				Destination   common.Address
+				TokenIds      []ethereum.BigInt
+				RevenueShares [][]struct {
+					Recipient common.Address
+					Bps       ethereum.BigInt
+				}
+				PayByVaultContract string
+			}
+			R string
+			S string
+			V string
 		}
 
 		if err := json.Unmarshal(arguments, &params); err != nil {
@@ -228,7 +239,41 @@ func (c *FeralfileExhibitionV4Contract) ParamEncoder(method string, arguments js
 		copy(r32Val[:], rVal)
 		copy(s32Val[:], sVal)
 
-		input, err := parsed.Pack(method, r32Val, s32Val, uint8(vVal), params.SaleData)
+		tokenIDs := make([]*big.Int, 0)
+		for _, v := range params.SaleData.TokenIds {
+			tokenID := v.Int
+			tokenIDs = append(tokenIDs, &tokenID)
+		}
+
+		revenueShares := make([][]IFeralfileSaleDataRevenueShare, 0)
+		for _, v := range params.SaleData.RevenueShares {
+			revenueShare := make([]IFeralfileSaleDataRevenueShare, 0)
+			for _, vv := range v {
+				bps := vv.Bps.Int
+				revenueShare = append(revenueShare, IFeralfileSaleDataRevenueShare{
+					Recipient: vv.Recipient,
+					Bps:       &bps,
+				})
+			}
+			revenueShares = append(revenueShares, revenueShare)
+		}
+
+		var pbv bool
+		if params.SaleData.PayByVaultContract == "true" {
+			pbv = true
+		}
+
+		saleData := IFeralfileSaleDataSaleData{
+			Price:              &params.SaleData.Price.Int,
+			Cost:               &params.SaleData.Cost.Int,
+			ExpiryTime:         &params.SaleData.ExpiryTime.Int,
+			Destination:        params.SaleData.Destination,
+			TokenIds:           tokenIDs,
+			RevenueShares:      revenueShares,
+			PayByVaultContract: pbv,
+		}
+
+		input, err := parsed.Pack(method, r32Val, s32Val, uint8(vVal), saleData)
 		if err != nil {
 			return nil, err
 		}
