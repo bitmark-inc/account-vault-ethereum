@@ -107,6 +107,26 @@ func (c *FeralfileExhibitionV4Contract) Call(wallet *ethereum.Wallet, method, fu
 			return nil, err
 		}
 		return tx, nil
+	case "mintArtworks":
+		var params []struct {
+			SeriesId ethereum.BigInt `json:"series_id"`
+			TokenId  ethereum.BigInt `json:"token_id"`
+			Owner    common.Address  `json:"owner"`
+		}
+		if err := json.Unmarshal(arguments, &params); err != nil {
+			return nil, err
+		}
+
+		mintData := make([]FeralfileExhibitionV4MintData, len(params))
+		for i := 0; i < len(params); i++ {
+			mintData[i] = FeralfileExhibitionV4MintData{
+				SeriesId: &params[i].SeriesId.Int,
+				TokenId:  &params[i].TokenId.Int,
+				Owner:    params[i].Owner,
+			}
+		}
+
+		return contract.MintArtworks(t, mintData)
 	case "buyArtworks":
 		var params struct {
 			SaleData struct {
