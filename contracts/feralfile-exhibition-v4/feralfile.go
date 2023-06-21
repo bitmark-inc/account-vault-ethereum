@@ -127,6 +127,13 @@ func (c *FeralfileExhibitionV4Contract) Call(wallet *ethereum.Wallet, method, fu
 		}
 
 		return contract.MintArtworks(t, mintData)
+	case "setTokenBaseURI":
+		var baseURI string
+		if err := json.Unmarshal(arguments, &baseURI); err != nil {
+			return nil, err
+		}
+
+		return contract.SetTokenBaseURI(t, baseURI)
 	case "buyArtworks":
 		var params struct {
 			SaleData struct {
