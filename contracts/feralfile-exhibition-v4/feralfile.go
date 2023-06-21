@@ -208,7 +208,7 @@ func (c *FeralfileExhibitionV4Contract) ParamEncoder(method string, arguments js
 					Recipient common.Address
 					Bps       ethereum.BigInt
 				}
-				PayByVaultContract string
+				PayByVaultContract bool
 			}
 			R string
 			S string
@@ -258,11 +258,6 @@ func (c *FeralfileExhibitionV4Contract) ParamEncoder(method string, arguments js
 			revenueShares = append(revenueShares, revenueShare)
 		}
 
-		var pbv bool
-		if params.SaleData.PayByVaultContract == "true" {
-			pbv = true
-		}
-
 		saleData := IFeralfileSaleDataSaleData{
 			Price:              &params.SaleData.Price.Int,
 			Cost:               &params.SaleData.Cost.Int,
@@ -270,7 +265,7 @@ func (c *FeralfileExhibitionV4Contract) ParamEncoder(method string, arguments js
 			Destination:        params.SaleData.Destination,
 			TokenIds:           tokenIDs,
 			RevenueShares:      revenueShares,
-			PayByVaultContract: pbv,
+			PayByVaultContract: params.SaleData.PayByVaultContract,
 		}
 
 		input, err := parsed.Pack(method, r32Val, s32Val, uint8(vVal), saleData)
