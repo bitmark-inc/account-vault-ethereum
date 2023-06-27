@@ -18,8 +18,8 @@ import (
 )
 
 const (
-	GasLimitPerMint         = 450000
-	GasLimitPerAuthTransfer = 150000
+	GasLimitPerMint = 150000
+	GasLimitPerBurn = 50000
 )
 
 type FeralfileExhibitionV4Contract struct {
@@ -102,6 +102,8 @@ func (c *FeralfileExhibitionV4Contract) Call(wallet *ethereum.Wallet, method, fu
 			burnParams = append(burnParams, &tokenID)
 		}
 
+		t.GasLimit = uint64(GasLimitPerBurn * len(burnParams))
+
 		tx, err := contract.BurnArtworks(t, burnParams)
 		if err != nil {
 			return nil, err
@@ -116,6 +118,8 @@ func (c *FeralfileExhibitionV4Contract) Call(wallet *ethereum.Wallet, method, fu
 		if err := json.Unmarshal(arguments, &params); err != nil {
 			return nil, err
 		}
+
+		t.GasLimit = uint64(GasLimitPerMint * len(params))
 
 		mintData := make([]FeralfileExhibitionV4MintData, len(params))
 		for i := 0; i < len(params); i++ {
