@@ -91,32 +91,37 @@ func (c *FeralfileExhibitionV4Contract) Call(wallet *ethereum.Wallet, method, fu
 	switch method {
 	case "burnArtworks":
 		var params []ethereum.BigInt
-
 		if err := json.Unmarshal(arguments, &params); err != nil {
 			return nil, err
 		}
-
-		burnParams := make([]*big.Int, 0)
-		for _, v := range params {
-			tokenID := v.Int
-			burnParams = append(burnParams, &tokenID)
+		if len(params) == 0 {
+			return nil, errors.New("Invalid token burn parameters")
 		}
 
-		t.GasLimit = uint64(GasLimitPerBurn * len(burnParams))
+		tokenIDs := make([]*big.Int, len(params))
+		for i, v := range params {
+			tokenID := v.Int
+			tokenIDs[i] = &tokenID
+		}
 
-		tx, err := contract.BurnArtworks(t, burnParams)
+		t.GasLimit = uint64(GasLimitPerBurn * len(tokenIDs))
+
+		tx, err := contract.BurnArtworks(t, tokenIDs)
 		if err != nil {
 			return nil, err
 		}
 		return tx, nil
 	case "mintArtworks":
 		var params []struct {
-			SeriesId ethereum.BigInt `json:"series_id"`
-			TokenId  ethereum.BigInt `json:"token_id"`
+			SeriesID ethereum.BigInt `json:"series_id"`
+			TokenID  ethereum.BigInt `json:"token_id"`
 			Owner    common.Address  `json:"owner"`
 		}
 		if err := json.Unmarshal(arguments, &params); err != nil {
 			return nil, err
+		}
+		if len(params) == 0 {
+			return nil, errors.New("Invalid token mint parameters")
 		}
 
 		t.GasLimit = uint64(GasLimitPerMint * len(params))
@@ -124,19 +129,18 @@ func (c *FeralfileExhibitionV4Contract) Call(wallet *ethereum.Wallet, method, fu
 		mintData := make([]FeralfileExhibitionV4MintData, len(params))
 		for i := 0; i < len(params); i++ {
 			mintData[i] = FeralfileExhibitionV4MintData{
-				SeriesId: &params[i].SeriesId.Int,
-				TokenId:  &params[i].TokenId.Int,
+				SeriesId: &params[i].SeriesID.Int,
+				TokenId:  &params[i].TokenID.Int,
 				Owner:    params[i].Owner,
 			}
 		}
 
 		return contract.MintArtworks(t, mintData)
 	case "setTokenBaseURI":
-		var baseURI string
-		if err := json.Unmarshal(arguments, &baseURI); err != nil {
-			return nil, err
+		baseURI := strings.Trim(string(arguments), "\"")
+		if baseURI == "" {
+			return nil, errors.New("Invalid token base URI")
 		}
-
 		return contract.SetTokenBaseURI(t, baseURI)
 	case "buyArtworks":
 		var params struct {
