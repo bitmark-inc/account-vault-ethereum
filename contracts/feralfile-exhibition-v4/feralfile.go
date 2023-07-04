@@ -41,10 +41,9 @@ func (c *FeralfileExhibitionV4Contract) Deploy(wallet *ethereum.Wallet, argument
 		Vault             common.Address `json:"vault"`
 		CostReceiver      common.Address `json:"cost_receiver"`
 		ContractURI       string         `json:"contract_uri"`
-		TokenBaseURI      string         `json:"token_base_uri"`
 		IsBurnable        bool           `json:"is_burnable"`
 		IsBridgeable      bool           `json:"is_bridgeable"`
-		SeriesIDs         []*big.Int     `json:"seriesIDs"`
+		SeriesIDs         []*big.Int     `json:"series_ids"`
 		SeriesMaxSupplies []*big.Int     `json:"series_max_supplies"`
 	}
 
@@ -57,10 +56,19 @@ func (c *FeralfileExhibitionV4Contract) Deploy(wallet *ethereum.Wallet, argument
 		return "", "", err
 	}
 
-	address, tx, _, err := DeployFeralfileExhibitionV4(t, wallet.RPCClient(),
-		params.Name, params.Symbol, params.Signer, params.IsBurnable,
-		params.IsBridgeable, params.Vault, params.CostReceiver, params.TokenBaseURI,
-		params.ContractURI, params.SeriesIDs, params.SeriesMaxSupplies)
+	address, tx, _, err := DeployFeralfileExhibitionV4(
+		t,
+		wallet.RPCClient(),
+		params.Name,
+		params.Symbol,
+		params.IsBurnable,
+		params.IsBridgeable,
+		params.Signer,
+		params.Vault,
+		params.CostReceiver,
+		params.ContractURI,
+		params.SeriesIDs,
+		params.SeriesMaxSupplies)
 	if err != nil {
 		return "", "", err
 	}
