@@ -173,7 +173,7 @@ func (c *FeralfileExhibitionV3Contract) Call(wallet *ethereum.Wallet, method, fu
 
 		for _, v := range params {
 			tokenID := v.TokenID.Int
-			timestamp := v.Timestamp.Int
+			expireTime := v.Timestamp.Int
 			rVal, err := hex.DecodeString(strings.Replace(v.R, "0x", "", -1))
 			if err != nil {
 				return nil, err
@@ -195,13 +195,13 @@ func (c *FeralfileExhibitionV3Contract) Call(wallet *ethereum.Wallet, method, fu
 			copy(s32Val[:], sVal)
 
 			transferParams = append(transferParams, FeralfileExhibitionV3TransferArtworkParam{
-				From:      v.From,
-				To:        v.To,
-				TokenID:   &tokenID,
-				Timestamp: &timestamp,
-				R:         r32Val,
-				S:         s32Val,
-				V:         uint8(vVal),
+				From:       v.From,
+				To:         v.To,
+				TokenID:    &tokenID,
+				ExpireTime: &expireTime,
+				R:          r32Val,
+				S:          s32Val,
+				V:          uint8(vVal),
 			})
 		}
 
