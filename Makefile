@@ -29,9 +29,6 @@ endif
 ifndef pkg
 	$(error pkg is undefined)
 endif
-ifndef contract_type 
-contract_type = $(contract_name)
-endif
 
 build-contract: check-build-contract setup-submodules
 	pushd sub_modules/feralfile-exhibition-smart-contract && \
@@ -40,4 +37,4 @@ build-contract: check-build-contract setup-submodules
 	jq -r ".bytecode" build/contracts/$(contract_name).json > ./build/$(contract_name).bin && \
 	jq -r ".abi" build/contracts/$(contract_name).json > ./build/$(contract_name).abi && \
 	popd && \
-	abigen --abi sub_modules/feralfile-exhibition-smart-contract/build/$(contract_name).abi --bin sub_modules/feralfile-exhibition-smart-contract/build/$(contract_name).bin --pkg $(pkg) -type $(contract_type) --out $(output)/abi.go  
+	abigen --abi sub_modules/feralfile-exhibition-smart-contract/build/$(contract_name).abi --bin sub_modules/feralfile-exhibition-smart-contract/build/$(contract_name).bin --pkg $(pkg) -type $(contract_name) --out $(output)/abi.go  
