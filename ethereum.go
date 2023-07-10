@@ -7,6 +7,7 @@ import (
 	"fmt"
 	"math/big"
 
+	ethereum "github.com/ethereum/go-ethereum"
 	"github.com/ethereum/go-ethereum/accounts"
 	"github.com/ethereum/go-ethereum/accounts/abi"
 	"github.com/ethereum/go-ethereum/accounts/abi/bind"
@@ -30,7 +31,7 @@ type Wallet struct {
 
 // NewWallet creates a wallet from a given seed
 func NewWallet(seed []byte, network, rpcURL string) (*Wallet, error) {
-	chainID := params.SepoliaChainConfig.ChainID
+	chainID := params.GoerliChainConfig.ChainID
 	if network == "livenet" {
 		chainID = params.MainnetChainConfig.ChainID
 	}
@@ -61,7 +62,7 @@ func NewWallet(seed []byte, network, rpcURL string) (*Wallet, error) {
 
 // NewWallet creates a wallet from a given mnemonic phrases
 func NewWalletFromMnemonic(words, network, rpcURL string) (*Wallet, error) {
-	chainID := params.SepoliaChainConfig.ChainID
+	chainID := params.GoerliChainConfig.ChainID
 	if network == "livenet" {
 		chainID = params.MainnetChainConfig.ChainID
 	}
@@ -101,11 +102,20 @@ func (w *Wallet) Account() string {
 }
 
 // SignABIParameters sign packed function parameters and returns (r|v|s) in forms of hex string
-func (w *Wallet) SignABIParameters(ctx context.Context, types []string, arguments ...interface{}) (string, string, string, error) {
+func (w *Wallet) SignABIParameters(ctx context.Context, types []interface{}, arguments ...interface{}) (string, string, string, error) {
+	abiTypes, abiTypesArguments, parsedValue, err := parseABIParams(types, arguments)
+	if err != nil {
+		return "", "", "", err
+	}
+
 	args := abi.Arguments{}
 
-	for _, t := range types {
-		ty, err := abi.NewType(t, "", nil)
+	for i, t := range abiTypes {
+		var am []abi.ArgumentMarshaling
+		if abiTypesArguments[i] != nil {
+			am = *abiTypesArguments[i]
+		}
+		ty, err := abi.NewType(t, "", am)
 		if err != nil {
 			return "", "", "", err
 		}
@@ -113,7 +123,7 @@ func (w *Wallet) SignABIParameters(ctx context.Context, types []string, argument
 		args = append(args, abi.Argument{Type: ty})
 	}
 
-	argBytes, err := args.Pack(arguments...)
+	argBytes, err := args.Pack(parsedValue...)
 	if err != nil {
 		return "", "", "", err
 	}
@@ -164,10 +174,8 @@ func (w *Wallet) TransferETH(ctx context.Context, to string, amount string, cust
 	if !ok {
 		return "", fmt.Errorf("can not set amount")
 	}
+	fromAddress := account.Address
 	toAddress := common.HexToAddress(to)
-
-	// fixed gas limit for regular transferring
-	gasLimit := uint64(21000)
 
 	var gasPrice *big.Int
 	if customizeGasPriceInWei != nil && *customizeGasPriceInWei != 0 {
@@ -180,7 +188,16 @@ func (w *Wallet) TransferETH(ctx context.Context, to string, amount string, cust
 		}
 	}
 
-	tx := types.NewTransaction(nonce, toAddress, value, gasLimit, gasPrice, nil)
+	egl, err := w.rpcClient.EstimateGas(ctx, ethereum.CallMsg{
+		From:  fromAddress,
+		To:    &toAddress,
+		Value: value,
+	})
+	if err != nil {
+		return "", err
+	}
+
+	tx := types.NewTransaction(nonce, toAddress, value, egl, gasPrice, nil)
 
 	signedTx, err := w.wallet.SignTx(account, tx, nil)
 	if err != nil {

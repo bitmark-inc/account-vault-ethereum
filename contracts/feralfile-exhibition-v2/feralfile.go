@@ -139,6 +139,10 @@ func (c *FeralfileExhibitionV2Contract) Call(wallet *ethereum.Wallet, method, fu
 	}
 }
 
+func (c *FeralfileExhibitionV2Contract) ParamEncoder(method string, arguments json.RawMessage) ([]byte, error) {
+	return nil, fmt.Errorf("unsupported contract version")
+}
+
 func init() {
 	ethereum.RegisterContract("FeralfileExhibitionV2", FeralfileExhibitionV2ContractFactory)
 }
