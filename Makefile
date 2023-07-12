@@ -19,22 +19,19 @@ clean:
 setup-submodules:
 	cp sub_modules/feralfile-exhibition-smart-contract/.secret.json.example sub_modules/feralfile-exhibition-smart-contract/.secret.json
 
-check-build-contract: check
-ifndef contract_name 
-	$(error contract_name is undefined)
-endif
-ifndef output
-	$(error output is undefined)
-endif
-ifndef pkg
-	$(error pkg is undefined)
-endif
-
-build-contract: check-build-contract setup-submodules
-	pushd sub_modules/feralfile-exhibition-smart-contract && \
+build-contract: check setup-submodules
+	cd sub_modules/feralfile-exhibition-smart-contract && \
 	npm install && \
 	truffle compile && \
-	jq -r ".bytecode" build/contracts/$(contract_name).json > ./build/$(contract_name).bin && \
-	jq -r ".abi" build/contracts/$(contract_name).json > ./build/$(contract_name).abi && \
-	popd && \
-	abigen --abi sub_modules/feralfile-exhibition-smart-contract/build/$(contract_name).abi --bin sub_modules/feralfile-exhibition-smart-contract/build/$(contract_name).bin --pkg $(pkg) -type $(contract_name) --out $(output)/abi.go  
+	jq -r ".bytecode" build/contracts/FeralfileExhibitionV2.json > ./build/FeralfileExhibitionV2.bin && \
+	jq -r ".abi" build/contracts/FeralfileExhibitionV2.json > ./build/FeralfileExhibitionV2.abi && \
+	jq -r ".bytecode" build/contracts/FeralfileExhibitionV3.json > ./build/FeralfileExhibitionV3.bin && \
+	jq -r ".abi" build/contracts/FeralfileExhibitionV3.json > ./build/FeralfileExhibitionV3.abi && \
+	jq -r ".bytecode" build/contracts/FeralfileExhibitionV4.json > ./build/FeralfileExhibitionV4.bin && \
+	jq -r ".abi" build/contracts/FeralfileExhibitionV4.json > ./build/FeralfileExhibitionV4.abi && \
+	cd -
+
+build: build-contract
+	abigen --abi sub_modules/feralfile-exhibition-smart-contract/build/FeralfileExhibitionV2.abi --bin sub_modules/feralfile-exhibition-smart-contract/build/FeralfileExhibitionV2.bin --pkg feralfilev2 -type FeralfileExhibitionV2 --out contracts/feralfile-exhibition-v2/abi.go
+	abigen --abi sub_modules/feralfile-exhibition-smart-contract/build/FeralfileExhibitionV3.abi --bin sub_modules/feralfile-exhibition-smart-contract/build/FeralfileExhibitionV3.bin --pkg feralfilev3 -type FeralfileExhibitionV3 --out contracts/feralfile-exhibition-v3/abi.go
+	abigen --abi sub_modules/feralfile-exhibition-smart-contract/build/FeralfileExhibitionV4.abi --bin sub_modules/feralfile-exhibition-smart-contract/build/FeralfileExhibitionV4.bin --pkg feralfilev4 -type FeralfileExhibitionV4 --out contracts/feralfile-exhibition-v4/abi.go
