@@ -102,5 +102,5 @@ A client can easily query contracts by using `GetContract` function.
 ### Scripts
 
 ```shell
-make build-contract contract_name=FeralfileExhibitionV4 output=contracts/feralfile-exhibition-v4 pkg=feralfilev4
+make build
 ```
