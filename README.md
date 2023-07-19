@@ -3,6 +3,7 @@
 The goal of this package is to enable bitmark account vault supporting Ethereum.
 
 This package includes:
+
 - An ethereum wallet
 - A contract interface which defines how account vault interact with smart contracts
 - A singleton for contract registration
@@ -87,3 +88,19 @@ func init() {
 ```
 
 A client can easily query contracts by using `GetContract` function.
+
+## Build abi.go
+
+### Required package
+
+- `truffle`
+- `jq`
+- `abigen`
+- `npm`
+- `make`
+
+### Scripts
+
+```shell
+make build
+```
