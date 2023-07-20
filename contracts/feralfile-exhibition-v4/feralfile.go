@@ -150,6 +150,14 @@ func (c *FeralfileExhibitionV4Contract) Call(wallet *ethereum.Wallet, method, fu
 			return nil, errors.New("Invalid token base URI")
 		}
 		return contract.SetTokenBaseURI(t, baseURI)
+	case "startSale":
+		return contract.StartSale(t)
+	case "transferOwnership":
+		var newOwner common.Address
+		if err := json.Unmarshal(arguments, &newOwner); err != nil {
+			return nil, err
+		}
+		return contract.TransferOwnership(t, newOwner)
 	case "buyArtworks":
 		var params struct {
 			SaleData struct {
