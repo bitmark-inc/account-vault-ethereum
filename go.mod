@@ -1,6 +1,6 @@
 module github.com/bitmark-inc/account-vault-ethereum
 
-go 1.19
+go 1.20
 
 require (
 	github.com/ethereum/go-ethereum v1.13.0
