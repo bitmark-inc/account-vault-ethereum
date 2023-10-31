@@ -54,7 +54,7 @@ func (c *FeralfileEnglishAuctionContract) Call(wallet *ethereum.Wallet, method, 
 	if err != nil {
 		return nil, err
 	}
-
+	fmt.Println(c.contractAddress)
 	t, err := wallet.Transactor()
 	if err != nil {
 		return nil, err
@@ -89,21 +89,25 @@ func (c *FeralfileEnglishAuctionContract) Call(wallet *ethereum.Wallet, method, 
 			return nil, errors.New("Invalid params")
 		}
 
+		fmt.Println(params)
+
 		auctions := make([]FeralfileEnglishAuctionAuction, len(params))
 		for i, v := range params {
+			k := v
 			auctions[i] = FeralfileEnglishAuctionAuction{
-				Id:                &v.ID.Int,
-				StartAt:           &v.StartAt.Int,
-				EndAt:             &v.EndAt.Int,
-				ExtendDuration:    &v.ExtendDuration.Int,
-				ExtendThreshold:   &v.ExtendThreshold.Int,
-				MinIncreaseFactor: &v.MinIncreaseFactor.Int,
-				MinIncreaseAmount: &v.MinIncreaseAmount.Int,
-				MinPrice:          &v.MinPrice.Int,
-				IsSettled:         v.IsSettled,
+				Id:                &k.ID.Int,
+				StartAt:           &k.StartAt.Int,
+				EndAt:             &k.EndAt.Int,
+				ExtendDuration:    &k.ExtendDuration.Int,
+				ExtendThreshold:   &k.ExtendThreshold.Int,
+				MinIncreaseFactor: &k.MinIncreaseFactor.Int,
+				MinIncreaseAmount: &k.MinIncreaseAmount.Int,
+				MinPrice:          &k.MinPrice.Int,
+				IsSettled:         k.IsSettled,
 			}
 		}
 
+		fmt.Println(auctions)
 		tx, err := contract.RegisterAuctions(t, auctions)
 		if err != nil {
 			return nil, err
