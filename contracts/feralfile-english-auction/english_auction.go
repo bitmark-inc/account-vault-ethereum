@@ -72,15 +72,15 @@ func (c *FeralfileEnglishAuctionContract) Call(wallet *ethereum.Wallet, method, 
 	switch method {
 	case "registerAuctions":
 		var params []struct {
-			ID                ethereum.BigInt `json:"id"`
-			StartAt           ethereum.BigInt `json:"start_at"`
-			EndAt             ethereum.BigInt `json:"end_at"`
-			ExtendDuration    ethereum.BigInt `json:"extend_duration"`
-			ExtendThreshold   ethereum.BigInt `json:"extend_threshold"`
-			MinIncreaseFactor ethereum.BigInt `json:"min_increase_factor"`
-			MinIncreaseAmount ethereum.BigInt `json:"min_increase_amount"`
-			MinPrice          ethereum.BigInt `json:"min_price"`
-			IsSettled         bool            `json:"is_settled"`
+			ID                ethereum.BigInt
+			StartAt           ethereum.BigInt
+			EndAt             ethereum.BigInt
+			ExtendDuration    ethereum.BigInt
+			ExtendThreshold   ethereum.BigInt
+			MinIncreaseFactor ethereum.BigInt
+			MinIncreaseAmount ethereum.BigInt
+			MinPrice          ethereum.BigInt
+			IsSettled         bool
 		}
 		if err := json.Unmarshal(arguments, &params); err != nil {
 			return nil, err
@@ -88,8 +88,6 @@ func (c *FeralfileEnglishAuctionContract) Call(wallet *ethereum.Wallet, method, 
 		if len(params) == 0 {
 			return nil, errors.New("Invalid params")
 		}
-
-		fmt.Println(params)
 
 		auctions := make([]FeralfileEnglishAuctionAuction, len(params))
 		for i, v := range params {
@@ -107,7 +105,6 @@ func (c *FeralfileEnglishAuctionContract) Call(wallet *ethereum.Wallet, method, 
 			}
 		}
 
-		fmt.Println(auctions)
 		tx, err := contract.RegisterAuctions(t, auctions)
 		if err != nil {
 			return nil, err
@@ -115,13 +112,13 @@ func (c *FeralfileEnglishAuctionContract) Call(wallet *ethereum.Wallet, method, 
 		return tx, nil
 	case "placeSignedBid":
 		var params struct {
-			AuctionID ethereum.BigInt `json:"auction_id"`
-			Bidder    common.Address  `json:"bidder"`
-			Amount    ethereum.BigInt `json:"amount"`
-			Timestamp ethereum.BigInt `json:"timestamp"`
-			R         string          `json:"r"`
-			S         string          `json:"s"`
-			V         string          `json:"v"`
+			AuctionID ethereum.BigInt
+			Bidder    common.Address
+			Amount    ethereum.BigInt
+			Timestamp ethereum.BigInt
+			R         string
+			S         string
+			V         string
 		}
 		if err := json.Unmarshal(arguments, &params); err != nil {
 			return nil, err
@@ -150,24 +147,24 @@ func (c *FeralfileEnglishAuctionContract) Call(wallet *ethereum.Wallet, method, 
 		return contract.PlaceSignedBid(t, &params.AuctionID.Int, params.Bidder, &params.Amount.Int, &params.Timestamp.Int, r32Val, s32Val, uint8(vVal))
 	case "settleAuction":
 		var params struct {
-			AuctionID       ethereum.BigInt `json:"auction_id"`
-			ContractAddress common.Address  `json:"contract_address"`
-			VaultAddress    common.Address  `json:"vault_address"`
+			AuctionID       ethereum.BigInt
+			ContractAddress common.Address
+			VaultAddress    common.Address
 			SaleData        struct {
-				Price         ethereum.BigInt   `json:"price"`
-				Cost          ethereum.BigInt   `json:"cost"`
-				ExpiryTime    ethereum.BigInt   `json:"expiry_time"`
-				Destination   common.Address    `json:"destination"`
-				TokenIds      []ethereum.BigInt `json:"token_ids"`
+				Price         ethereum.BigInt
+				Cost          ethereum.BigInt
+				ExpiryTime    ethereum.BigInt
+				Destination   common.Address
+				TokenIds      []ethereum.BigInt
 				RevenueShares [][]struct {
-					Recipient common.Address  `json:"recipient"`
-					Bps       ethereum.BigInt `json:"bps"`
-				} `json:"revenue_shares"`
+					Recipient common.Address
+					Bps       ethereum.BigInt
+				}
 				PayByVaultContract bool
-			} `json:"sale_data"`
-			R string `json:"r"`
-			S string `json:"s"`
-			V string `json:"v"`
+			}
+			R string
+			S string
+			V string
 		}
 
 		if err := json.Unmarshal(arguments, &params); err != nil {
