@@ -228,6 +228,23 @@ func (c *FeralfileExhibitionV3Contract) Call(wallet *ethereum.Wallet, method, fu
 			return nil, err
 		}
 		return tx, nil
+	case "transfer":
+		var params struct {
+			To      common.Address  `json:"to"`
+			TokenID ethereum.BigInt `json:"token_id"`
+		}
+		if err := json.Unmarshal(arguments, &params); err != nil {
+			return nil, err
+		}
+
+		t.GasLimit = 120000
+
+		tx, err := contract.SafeTransferFrom(t,
+			common.HexToAddress(wallet.Account()), params.To, &params.TokenID.Int)
+		if err != nil {
+			return nil, err
+		}
+		return tx, nil
 	default:
 		return nil, fmt.Errorf("unsupported method")
 	}
