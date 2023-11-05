@@ -245,6 +245,21 @@ func (c *FeralfileExhibitionV3Contract) Call(wallet *ethereum.Wallet, method, fu
 			return nil, err
 		}
 		return tx, nil
+	case "approve_for_all":
+		var params struct {
+			Operator common.Address `json:"operator"`
+		}
+		if err := json.Unmarshal(arguments, &params); err != nil {
+			return nil, err
+		}
+
+		t.GasLimit = 120000
+
+		tx, err := contract.setApprovalForAll(t, params.Operator, true)
+		if err != nil {
+			return nil, err
+		}
+		return tx, nil
 	default:
 		return nil, fmt.Errorf("unsupported method")
 	}
