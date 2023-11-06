@@ -145,7 +145,7 @@ func (c *FeralfileExhibitionV2Contract) Call(wallet *ethereum.Wallet, method, fu
 
 		t.GasLimit = 120000
 
-		tx, err := contract.setApprovalForAll(t, params.Operator, true)
+		tx, err := contract.SetApprovalForAll(t, params.Operator, true)
 		if err != nil {
 			return nil, err
 		}
