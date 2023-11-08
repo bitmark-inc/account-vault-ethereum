@@ -112,13 +112,13 @@ func (c *FeralfileEnglishAuctionContract) Call(wallet *ethereum.Wallet, method, 
 		return tx, nil
 	case "placeSignedBid":
 		var params struct {
-			AuctionID ethereum.BigInt
-			Bidder    common.Address
-			Amount    ethereum.BigInt
-			Timestamp ethereum.BigInt
-			R         string
-			S         string
-			V         string
+			AuctionID  ethereum.BigInt
+			Bidder     common.Address
+			Amount     ethereum.BigInt
+			ExpiryTime ethereum.BigInt
+			R          string
+			S          string
+			V          string
 		}
 		if err := json.Unmarshal(arguments, &params); err != nil {
 			return nil, err
@@ -144,7 +144,7 @@ func (c *FeralfileEnglishAuctionContract) Call(wallet *ethereum.Wallet, method, 
 		copy(r32Val[:], rVal)
 		copy(s32Val[:], sVal)
 
-		return contract.PlaceSignedBid(t, &params.AuctionID.Int, params.Bidder, &params.Amount.Int, &params.Timestamp.Int, r32Val, s32Val, uint8(vVal))
+		return contract.PlaceSignedBid(t, &params.AuctionID.Int, params.Bidder, &params.Amount.Int, &params.ExpiryTime.Int, r32Val, s32Val, uint8(vVal))
 	case "settleAuction":
 		var params struct {
 			AuctionID       ethereum.BigInt
