@@ -143,24 +143,55 @@ func TestSignETHTypedDataV4(t *testing.T) {
 	mnemonic := "exotic syrup achieve seven dial idle isolate vintage very harbor adult oxygen"
 	w, err := NewWalletFromMnemonic(mnemonic, "livenet", "http://127.0.0.1:7545")
 	assert.NoError(t, err)
+
 	js := json.RawMessage(`{
-		"domain":{
-		   "chainId":0,
-		   "name":"My amazing dApp",
-		   "verifyingContract":"0x1C56346CD2A2Bf3202F771f50d3D14a367B48070",
-		   "version":"2",
-		   "salt":"0xf2d857f4a3edcb9b78b4d503bfe733db1e3f6cdc2b7971ee739626c97e86a558"
+		"domain": {
+		  "name": "Seaport",
+			"version": "1.5",
+			"chainId": 5,
+			"verifyingContract": "0x00000000000000adc04c56bf30ac9d3c0aaf14dc"
 		},
-		"message":{
-		   "amount":100,
-		   "bidder":{
-			  "userId":323,
-			  "wallet":"0x3333333333333333333333333333333333333333"
-		   }
+		"message": {
+			"offerer": "0x00021a5d2a0ef7c84959991ff79c357cb737d1a7",
+			"zone": "0x0000000000000000000000000000000000000000",
+			"offer": [
+				{
+					"itemType": 2,
+					"token": "0xb9a0ab98e8457ded503d6d3ecdbf2bcc06e6ab3f",
+					"identifierOrCriteria": "300221895159563365540897365039676187549271169",
+					"startAmount": "1",
+					"endAmount": "1"
+				}
+			],
+			"consideration": [
+				{
+					"itemType": 0,
+					"token": "0x0000000000000000000000000000000000000000",
+					"identifierOrCriteria": "0",
+					"startAmount": "1170000000000000000",
+					"endAmount": "1170000000000000000",
+					"recipient": "0x00021a5d2a0ef7c84959991ff79c357cb737d1a7"
+				},
+				{
+					"itemType": 0,
+					"token": "0x0000000000000000000000000000000000000000",
+					"identifierOrCriteria": "0",
+					"startAmount": "30000000000000000",
+					"endAmount": "30000000000000000",
+					"recipient": "0x0000a26b00c1f0df003000390027140000faa719"
+				}
+			],
+			"orderType": 0,
+			"startTime": 1698737840,
+			"endTime": 1714289900,
+			"zoneHash": "0x0000000000000000000000000000000000000000000000000000000000000000",
+			"salt": "0x1d4da48b0000000000000000000000009e1da4edfe34e4d35451a438021bdac2",
+			"conduitKey": "0x0000007b02230091a7ed01230072f7006a004d60a8d4e71d599b8104250f0000",
+			"counter": "0"
 		},
-		"primaryType":"Bid",
-		"types":{
-		   "EIP712Domain":[
+		"primaryType": "OrderComponents",
+		"types": {
+		   "EIP712Domain": [
 			  {
 				 "name":"name",
 				 "type":"string"
@@ -176,40 +207,108 @@ func TestSignETHTypedDataV4(t *testing.T) {
 			  {
 				 "name":"verifyingContract",
 				 "type":"address"
-			  },
-			  {
-				 "name":"salt",
-				 "type":"bytes32"
 			  }
 		   ],
-		   "Bid":[
-			  {
-				 "name":"amount",
-				 "type":"uint256"
-			  },
-			  {
-				 "name":"bidder",
-				 "type":"Identity"
-			  }
-		   ],
-		   "Identity":[
-			  {
-				 "name":"userId",
-				 "type":"uint256"
-			  },
-			  {
-				 "name":"wallet",
-				 "type":"address"
-			  }
-		   ]
+		   "OrderComponents": [
+					{
+						"name": "offerer",
+						"type": "address"
+					},
+					{
+						"name": "zone",
+						"type": "address"
+					},
+					{
+						"name": "offer",
+						"type": "OfferItem[]"
+					},
+					{
+						"name": "consideration",
+						"type": "ConsiderationItem[]"
+					},
+					{
+						"name": "orderType",
+						"type": "uint8"
+					},
+					{
+						"name": "startTime",
+						"type": "uint256"
+					},
+					{
+						"name": "endTime",
+						"type": "uint256"
+					},
+					{
+						"name": "zoneHash",
+						"type": "bytes32"
+					},
+					{
+						"name": "salt",
+						"type": "uint256"
+					},
+					{
+						"name": "conduitKey",
+						"type": "bytes32"
+					},
+					{
+						"name": "counter",
+						"type": "uint256"
+					}
+				],
+				"OfferItem": [
+					{
+						"name": "itemType",
+						"type": "uint8"
+					},
+					{
+						"name": "token",
+						"type": "address"
+					},
+					{
+						"name": "identifierOrCriteria",
+						"type": "uint256"
+					},
+					{
+						"name": "startAmount",
+						"type": "uint256"
+					},
+					{
+						"name": "endAmount",
+						"type": "uint256"
+					}
+				],
+				"ConsiderationItem": [
+					{
+						"name": "itemType",
+						"type": "uint8"
+					},
+					{
+						"name": "token",
+						"type": "address"
+					},
+					{
+						"name": "identifierOrCriteria",
+						"type": "uint256"
+					},
+					{
+						"name": "startAmount",
+						"type": "uint256"
+					},
+					{
+						"name": "endAmount",
+						"type": "uint256"
+					},
+					{
+						"name": "recipient",
+						"type": "address"
+					}
+				]
 		}
 	 }`)
 
-	r, s, v, err := w.SignETHTypedDataV4(context.Background(), js)
+	signature, err := w.SignETHTypedDataV4(context.Background(), js)
 	assert.NoError(t, err, "SignETHTypedDataV4 error")
-	assert.Equal(t, "0x602f1f0627198c2071c4a7f2dca96b047923d42517d1d26b20a71589970cdc81", r)
-	assert.Equal(t, "0x57363d053782350fea0d7d2196720333b48997e21c113ef76f25aa8ba1c65605", s)
-	assert.Equal(t, "0x1c", v)
+	assert.Equal(t, "0xe72b657a96fcee4dbd7d5d36c935ddf1ae51af6b7547d6ca3a271d7fda9da0477bba4d555c07ee24b7c94ec85cb37862e840923fb46021b2572d9f72a9995f3301", signature)
 }
 
 func TestSignABIParametersWithInvalidType(t *testing.T) {

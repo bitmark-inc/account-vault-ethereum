@@ -157,20 +157,20 @@ func (w *Wallet) SignABIParameters(ctx context.Context, types []interface{}, arg
 }
 
 // SignETHTypedDataV4 sign packed function parameters and returns signature
-func (w *Wallet) SignETHTypedDataV4(ctx context.Context, typedDataJson json.RawMessage) (string, string, string, error) {
+func (w *Wallet) SignETHTypedDataV4(ctx context.Context, typedDataJson json.RawMessage) (string, error) {
 	var typedData apitypes.TypedData
 	if err := json.Unmarshal(typedDataJson, &typedData); err != nil {
-		return "", "", "", fmt.Errorf("unmarshal typed data: %w", err)
+		return "", fmt.Errorf("unmarshal typed data: %w", err)
 	}
 
 	// EIP-712 typed data marshalling
 	domainSeparator, err := typedData.HashStruct("EIP712Domain", typedData.Domain.Map())
 	if err != nil {
-		return "", "", "", fmt.Errorf("eip712domain hash struct: %w", err)
+		return "", fmt.Errorf("eip712domain hash struct: %w", err)
 	}
 	typedDataHash, err := typedData.HashStruct(typedData.PrimaryType, typedData.Message)
 	if err != nil {
-		return "", "", "", fmt.Errorf("primary type hash struct: %w", err)
+		return "", fmt.Errorf("primary type hash struct: %w", err)
 	}
 
 	// add magic string prefix
@@ -179,18 +179,16 @@ func (w *Wallet) SignETHTypedDataV4(ctx context.Context, typedDataJson json.RawM
 
 	privateKey, err := w.wallet.PrivateKey(w.account)
 	if err != nil {
-		return "", "", "", err
+		return "", err
 	}
 	signature, err := crypto.Sign(sighash, privateKey)
 	if err != nil {
-		return "", "", "", err
+		return "", err
 	}
-	r, s, v :=
-		fmt.Sprintf("%#x", signature[0:32]),
-		fmt.Sprintf("%#x", signature[32:64]),
-		fmt.Sprintf("%#x", signature[64]+27)
 
-	return r, s, v, nil
+	sgn := fmt.Sprintf("%#x", signature)
+
+	return sgn, nil
 }
 
 // TransferETH performs regular ethereum transferring
