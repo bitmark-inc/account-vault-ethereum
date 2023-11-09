@@ -139,6 +139,7 @@ func TestSignABIParametersWithComplexStruct(t *testing.T) {
 }
 
 func TestSignETHTypedDataV4(t *testing.T) {
+	// NOTE: the signature validation is from https://weijiekoh.github.io/eip712-signing-demo/index.html
 	mnemonic := "exotic syrup achieve seven dial idle isolate vintage very harbor adult oxygen"
 	w, err := NewWalletFromMnemonic(mnemonic, "livenet", "http://127.0.0.1:7545")
 	assert.NoError(t, err)
