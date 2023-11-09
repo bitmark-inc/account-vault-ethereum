@@ -2,8 +2,8 @@ package ethereum
 
 import (
 	"context"
+	"encoding/json"
 	"errors"
-	"fmt"
 	"testing"
 
 	"github.com/stretchr/testify/assert"
@@ -139,20 +139,76 @@ func TestSignABIParametersWithComplexStruct(t *testing.T) {
 }
 
 func TestSignETHTypedDataV4(t *testing.T) {
-	mnemonic := "easily silver wear length license file final nation people worry replace one"
-	w, err := NewWalletFromMnemonic(mnemonic, "testnet", "http://127.0.0.1:7545")
+	mnemonic := "exotic syrup achieve seven dial idle isolate vintage very harbor adult oxygen"
+	w, err := NewWalletFromMnemonic(mnemonic, "livenet", "http://127.0.0.1:7545")
 	assert.NoError(t, err)
-	domain := map[string]interface{}{
-		"name":              "Seaport",
-		"version":           "1.5",
-		"chainId":           5,
-		"verifyingContract": "0x00000000000000adc04c56bf30ac9d3c0aaf14dc",
-	}
-	types := []interface{}{}
-	signature, err := w.SignETHTypedDataV4(context.Background(), domain, types)
-	fmt.Println("---------------------Kien---------------------------")
-	fmt.Println("---Kien---", signature)
-	fmt.Println("---------------------Kien---------------------------")
+	js := json.RawMessage(`{
+		"domain":{
+		   "chainId":0,
+		   "name":"My amazing dApp",
+		   "verifyingContract":"0x1C56346CD2A2Bf3202F771f50d3D14a367B48070",
+		   "version":"2",
+		   "salt":"0xf2d857f4a3edcb9b78b4d503bfe733db1e3f6cdc2b7971ee739626c97e86a558"
+		},
+		"message":{
+		   "amount":100,
+		   "bidder":{
+			  "userId":323,
+			  "wallet":"0x3333333333333333333333333333333333333333"
+		   }
+		},
+		"primaryType":"Bid",
+		"types":{
+		   "EIP712Domain":[
+			  {
+				 "name":"name",
+				 "type":"string"
+			  },
+			  {
+				 "name":"version",
+				 "type":"string"
+			  },
+			  {
+				 "name":"chainId",
+				 "type":"uint256"
+			  },
+			  {
+				 "name":"verifyingContract",
+				 "type":"address"
+			  },
+			  {
+				 "name":"salt",
+				 "type":"bytes32"
+			  }
+		   ],
+		   "Bid":[
+			  {
+				 "name":"amount",
+				 "type":"uint256"
+			  },
+			  {
+				 "name":"bidder",
+				 "type":"Identity"
+			  }
+		   ],
+		   "Identity":[
+			  {
+				 "name":"userId",
+				 "type":"uint256"
+			  },
+			  {
+				 "name":"wallet",
+				 "type":"address"
+			  }
+		   ]
+		}
+	 }`)
+
+	r, s, v, err := w.SignETHTypedDataV4(context.Background(), js)
+	assert.NoError(t, err, "SignETHTypedDataV4 error")
+	assert.Equal(t, "0x602f1f0627198c2071c4a7f2dca96b047923d42517d1d26b20a71589970cdc81", r)
+	assert.Equal(t, "0x57363d053782350fea0d7d2196720333b48997e21c113ef76f25aa8ba1c65605", s)
+	assert.Equal(t, "0x1c", v)
 }
 
 func TestSignABIParametersWithInvalidType(t *testing.T) {

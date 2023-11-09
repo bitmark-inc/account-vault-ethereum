@@ -12,15 +12,11 @@ import (
 	"github.com/ethereum/go-ethereum/accounts/abi"
 	"github.com/ethereum/go-ethereum/accounts/abi/bind"
 	"github.com/ethereum/go-ethereum/common"
-	"github.com/ethereum/go-ethereum/common/math"
 	"github.com/ethereum/go-ethereum/core/types"
 	"github.com/ethereum/go-ethereum/crypto"
 	"github.com/ethereum/go-ethereum/ethclient"
 	"github.com/ethereum/go-ethereum/params"
-	"github.com/ethereum/go-ethereum/signer/core"
 	"github.com/ethereum/go-ethereum/signer/core/apitypes"
-	"github.com/ethereum/go-ethereum/signer/fourbyte"
-	"github.com/ethereum/go-ethereum/signer/storage"
 	hdwallet "github.com/miguelmota/go-ethereum-hdwallet"
 	"golang.org/x/crypto/sha3"
 )
@@ -161,101 +157,40 @@ func (w *Wallet) SignABIParameters(ctx context.Context, types []interface{}, arg
 }
 
 // SignETHTypedDataV4 sign packed function parameters and returns signature
-func (w *Wallet) SignETHTypedDataV4(ctx context.Context, domain map[string]interface{}, types []interface{}, arguments ...interface{}) (string, error) {
-	accountConfig := accounts.Config{
-		InsecureUnlockAllowed: true,
+func (w *Wallet) SignETHTypedDataV4(ctx context.Context, typedDataJson json.RawMessage) (string, string, string, error) {
+	var typedData apitypes.TypedData
+	if err := json.Unmarshal(typedDataJson, &typedData); err != nil {
+		return "", "", "", fmt.Errorf("unmarshal typed data: %w", err)
 	}
-	accountManager := accounts.NewManager(&accountConfig)
 
-	db, err := fourbyte.New()
+	// EIP-712 typed data marshalling
+	domainSeparator, err := typedData.HashStruct("EIP712Domain", typedData.Domain.Map())
 	if err != nil {
-		return "", err
+		return "", "", "", fmt.Errorf("eip712domain hash struct: %w", err)
 	}
-	api := core.NewSignerAPI(accountManager, 1337, true, nil, db, true, &storage.NoStorage{})
-
-	var typesStandard = apitypes.Types{
-		"EIP712Domain": {
-			{
-				Name: "name",
-				Type: "string",
-			},
-			{
-				Name: "version",
-				Type: "string",
-			},
-			{
-				Name: "chainId",
-				Type: "uint256",
-			},
-			{
-				Name: "verifyingContract",
-				Type: "address",
-			},
-		},
-		"Person": {
-			{
-				Name: "name",
-				Type: "string",
-			},
-			{
-				Name: "wallet",
-				Type: "address",
-			},
-		},
-		"Mail": {
-			{
-				Name: "from",
-				Type: "Person",
-			},
-			{
-				Name: "to",
-				Type: "Person",
-			},
-			{
-				Name: "contents",
-				Type: "string",
-			},
-		},
+	typedDataHash, err := typedData.HashStruct(typedData.PrimaryType, typedData.Message)
+	if err != nil {
+		return "", "", "", fmt.Errorf("primary type hash struct: %w", err)
 	}
 
-	var domainStandard = apitypes.TypedDataDomain{
-		Name:              domain["name"].(string),
-		Version:           domain["version"].(string),
-		ChainId:           math.NewHexOrDecimal256(int64(domain["chainId"].(int))),
-		VerifyingContract: domain["verifyingContract"].(string),
-		Salt:              "",
+	// add magic string prefix
+	rawData := []byte(fmt.Sprintf("\x19\x01%s%s", string(domainSeparator), string(typedDataHash)))
+	sighash := crypto.Keccak256(rawData)
+
+	privateKey, err := w.wallet.PrivateKey(w.account)
+	if err != nil {
+		return "", "", "", err
 	}
-
-	const primaryType = "Mail"
-
-	var messageStandard = map[string]interface{}{
-		"from": map[string]interface{}{
-			"name":   "Cow",
-			"wallet": "0xCD2a3d9F938E13CD947Ec05AbC7FE734Df8DD826",
-		},
-		"to": map[string]interface{}{
-			"name":   "Bob",
-			"wallet": "0xbBbBBBBbbBBBbbbBbbBbbbbBBbBbbbbBbBbbBBbB",
-		},
-		"contents": "Hello, Bob!",
+	signature, err := crypto.Sign(sighash, privateKey)
+	if err != nil {
+		return "", "", "", err
 	}
+	r, s, v :=
+		fmt.Sprintf("%#x", signature[0:32]),
+		fmt.Sprintf("%#x", signature[32:64]),
+		fmt.Sprintf("%#x", signature[64]+27)
 
-	var typedData = apitypes.TypedData{
-		Types:       typesStandard,
-		PrimaryType: primaryType,
-		Domain:      domainStandard,
-		Message:     messageStandard,
-	}
-
-	mixedCaseAddress := common.NewMixedcaseAddress(w.account.Address)
-
-	signature, err := api.SignTypedData(ctx, mixedCaseAddress, typedData)
-
-	if nil != err {
-		return "", err
-	}
-
-	return signature.String(), nil
+	return r, s, v, nil
 }
 
 // TransferETH performs regular ethereum transferring
