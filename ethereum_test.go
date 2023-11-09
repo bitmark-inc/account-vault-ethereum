@@ -3,6 +3,7 @@ package ethereum
 import (
 	"context"
 	"errors"
+	"fmt"
 	"testing"
 
 	"github.com/stretchr/testify/assert"
@@ -135,6 +136,23 @@ func TestSignABIParametersWithComplexStruct(t *testing.T) {
 	assert.Equal(t, "0x12dec52a184d8c208dd2643a02f4b1e62ecb69cebf3a8d60baac9d727d962b1a", r)
 	assert.Equal(t, "0x15fa50556eac33f472ce1c085dca4171e89baa658e5d23c012cb8d63b747b2b6", s)
 	assert.Equal(t, "0x1c", v)
+}
+
+func TestSignETHTypedDataV4(t *testing.T) {
+	mnemonic := "easily silver wear length license file final nation people worry replace one"
+	w, err := NewWalletFromMnemonic(mnemonic, "testnet", "http://127.0.0.1:7545")
+	assert.NoError(t, err)
+	domain := map[string]interface{}{
+		"name":              "Seaport",
+		"version":           "1.5",
+		"chainId":           5,
+		"verifyingContract": "0x00000000000000adc04c56bf30ac9d3c0aaf14dc",
+	}
+	types := []interface{}{}
+	signature, err := w.SignETHTypedDataV4(context.Background(), domain, types)
+	fmt.Println("---------------------Kien---------------------------")
+	fmt.Println("---Kien---", signature)
+	fmt.Println("---------------------Kien---------------------------")
 }
 
 func TestSignABIParametersWithInvalidType(t *testing.T) {
