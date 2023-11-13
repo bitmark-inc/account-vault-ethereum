@@ -1,4 +1,4 @@
 [submodule "sub_modules/feralfile-exhibition-smart-contract"]
 	path = sub_modules/feralfile-exhibition-smart-contract
 	url = https://github.com/bitmark-inc/feralfile-exhibition-smart-contract.git
-	branch= feature/1706-english-auction
+	branch= main
