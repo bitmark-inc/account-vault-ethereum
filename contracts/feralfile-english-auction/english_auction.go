@@ -54,7 +54,6 @@ func (c *FeralfileEnglishAuctionContract) Call(wallet *ethereum.Wallet, method, 
 	if err != nil {
 		return nil, err
 	}
-	fmt.Println(c.contractAddress)
 	t, err := wallet.Transactor()
 	if err != nil {
 		return nil, err
