@@ -287,7 +287,8 @@ func (w *Wallet) TransferTransaction(ctx context.Context, to string, dataString 
 		return "", err
 	}
 
-	tx := types.NewTransaction(nonce, toAddress, nil, egl, gasPrice, data)
+	value := big.NewInt(0)
+	tx := types.NewTransaction(nonce, toAddress, value, egl, gasPrice, data)
 
 	signedTx, err := w.wallet.SignTx(account, tx, nil)
 	if err != nil {
