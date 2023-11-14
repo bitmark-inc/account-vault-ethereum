@@ -277,17 +277,18 @@ func (w *Wallet) TransferTransaction(ctx context.Context, to string, dataString 
 	}
 
 	data := json.RawMessage(dataString)
+	value := big.NewInt(0)
 
 	egl, err := w.rpcClient.EstimateGas(ctx, ethereum.CallMsg{
-		From: fromAddress,
-		To:   &toAddress,
-		Data: data,
+		From:  fromAddress,
+		To:    &toAddress,
+		Value: value,
+		Data:  data,
 	})
 	if err != nil {
 		return "", err
 	}
 
-	value := big.NewInt(0)
 	tx := types.NewTransaction(nonce, toAddress, value, egl, gasPrice, data)
 
 	signedTx, err := w.wallet.SignTx(account, tx, nil)
