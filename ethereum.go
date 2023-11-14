@@ -247,6 +247,60 @@ func (w *Wallet) TransferETH(ctx context.Context, to string, amount string, cust
 	return signedTx.Hash().String(), nil
 }
 
+// TransferTransaction performs regular ethereum transferring
+func (w *Wallet) TransferTransaction(ctx context.Context, to string, dataString string, customizeGasPriceInWei *int64, customizedNonce *uint64) (string, error) {
+	account := w.account
+
+	var nonce uint64
+	if customizedNonce == nil {
+		n, err := w.rpcClient.PendingNonceAt(ctx, account.Address)
+		if err != nil {
+			return "", err
+		}
+		nonce = n
+	} else {
+		nonce = *customizedNonce
+	}
+
+	fromAddress := account.Address
+	toAddress := common.HexToAddress(to)
+
+	var gasPrice *big.Int
+	if customizeGasPriceInWei != nil && *customizeGasPriceInWei != 0 {
+		gasPrice = big.NewInt(*customizeGasPriceInWei * params.Wei)
+	} else {
+		var err error
+		gasPrice, err = w.rpcClient.SuggestGasPrice(ctx)
+		if err != nil {
+			return "", err
+		}
+	}
+
+	data := json.RawMessage(dataString)
+
+	egl, err := w.rpcClient.EstimateGas(ctx, ethereum.CallMsg{
+		From: fromAddress,
+		To:   &toAddress,
+		Data: data,
+	})
+	if err != nil {
+		return "", err
+	}
+
+	tx := types.NewTransaction(nonce, toAddress, nil, egl, gasPrice, data)
+
+	signedTx, err := w.wallet.SignTx(account, tx, nil)
+	if err != nil {
+		return "", err
+	}
+
+	if err := w.rpcClient.SendTransaction(ctx, signedTx); err != nil {
+		return "", err
+	}
+
+	return signedTx.Hash().String(), nil
+}
+
 // GetEthereumBalance return ethereum balance at address
 func (w *Wallet) GetEthereumBalance(ctx context.Context) (string, error) {
 	balance, err := w.rpcClient.BalanceAt(ctx, w.account.Address, nil)

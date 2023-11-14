@@ -141,7 +141,7 @@ func TestSignABIParametersWithComplexStruct(t *testing.T) {
 func TestSignETHTypedDataV4(t *testing.T) {
 	// NOTE: the signature validation is from https://weijiekoh.github.io/eip712-signing-demo/index.html
 	mnemonic := "exotic syrup achieve seven dial idle isolate vintage very harbor adult oxygen"
-	w, err := NewWalletFromMnemonic(mnemonic, "livenet", "http://127.0.0.1:7545")
+	w, err := NewWalletFromMnemonic(mnemonic, "testnet", "http://127.0.0.1:7545")
 	assert.NoError(t, err)
 
 	js := json.RawMessage(`{
@@ -309,6 +309,23 @@ func TestSignETHTypedDataV4(t *testing.T) {
 	signature, err := w.SignETHTypedDataV4(context.Background(), js)
 	assert.NoError(t, err, "SignETHTypedDataV4 error")
 	assert.Equal(t, "0xe72b657a96fcee4dbd7d5d36c935ddf1ae51af6b7547d6ca3a271d7fda9da0477bba4d555c07ee24b7c94ec85cb37862e840923fb46021b2572d9f72a9995f3301", signature)
+}
+
+func TestSendTransaction(t *testing.T) {
+	// NOTE: the signature validation is from https://weijiekoh.github.io/eip712-signing-demo/index.html
+	mnemonic := "exotic syrup achieve seven dial idle isolate vintage very harbor adult oxygen"
+	w, err := NewWalletFromMnemonic(mnemonic, "testnet", "http://127.0.0.1:7545")
+	assert.NoError(t, err)
+
+	txID, err := w.TransferTransaction(
+		context.Background(),
+		"0xC766Ff6854008270D768195Cb93b7D7452B01f63",
+		"0xa22cb4650000000000000000000000001e0049783f008a0085193e00003d00cd54003c710000000000000000000000000000000000000000000000000000000000000001",
+		nil,
+		nil,
+	)
+	assert.NoError(t, err, "Transfer Transaction error")
+	assert.Equal(t, "", txID)
 }
 
 func TestSignABIParametersWithInvalidType(t *testing.T) {
