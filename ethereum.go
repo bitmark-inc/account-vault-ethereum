@@ -2,10 +2,12 @@ package ethereum
 
 import (
 	"context"
+	"encoding/hex"
 	"encoding/json"
 	"errors"
 	"fmt"
 	"math/big"
+	"strings"
 
 	ethereum "github.com/ethereum/go-ethereum"
 	"github.com/ethereum/go-ethereum/accounts"
@@ -276,7 +278,11 @@ func (w *Wallet) TransferTransaction(ctx context.Context, to string, dataString 
 		}
 	}
 
-	data := json.RawMessage(dataString)
+	data, err := hex.DecodeString(strings.TrimPrefix(dataString, "0x"))
+
+	if err != nil {
+		return "", err
+	}
 	value := big.NewInt(0)
 
 	egl, err := w.rpcClient.EstimateGas(ctx, ethereum.CallMsg{
