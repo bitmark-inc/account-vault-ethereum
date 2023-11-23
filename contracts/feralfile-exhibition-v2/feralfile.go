@@ -134,7 +134,6 @@ func (c *FeralfileExhibitionV2Contract) Call(wallet *ethereum.Wallet, method, fu
 			return nil, err
 		}
 		return tx, nil
-
 	case "approve_for_all":
 		var params struct {
 			Operator common.Address `json:"operator"`

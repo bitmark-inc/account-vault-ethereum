@@ -25,6 +25,10 @@ import (
 
 const DefaultDerivationPath = "m/44'/60'/0'/0/0"
 
+// Mainnet Seaport 1.5 https://etherscan.io/address/0x00000000000000adc04c56bf30ac9d3c0aaf14dc#writeContract
+// Goerli Seaport 1.5 https://goerli.etherscan.io/address/0x00000000000000adc04c56bf30ac9d3c0aaf14dc#writeContract
+const OSCancelPrefixData = "0xfd9f1e10"
+
 type Wallet struct {
 	chainID   *big.Int
 	wallet    *hdwallet.Wallet
@@ -249,8 +253,8 @@ func (w *Wallet) TransferETH(ctx context.Context, to string, amount string, cust
 	return signedTx.Hash().String(), nil
 }
 
-// TransferTransaction performs regular ethereum transferring
-func (w *Wallet) TransferTransaction(ctx context.Context, to string, dataString string, customizeGasPriceInWei *int64, customizedNonce *uint64) (string, error) {
+// CancelListingOS with data and 0 price
+func (w *Wallet) CancelListingOS(ctx context.Context, to string, dataString string, customizeGasPriceInWei *int64, customizedNonce *uint64) (string, error) {
 	account := w.account
 
 	var nonce uint64
@@ -276,6 +280,11 @@ func (w *Wallet) TransferTransaction(ctx context.Context, to string, dataString 
 		if err != nil {
 			return "", err
 		}
+	}
+
+	osCancelListingPrefix := dataString[:10]
+	if osCancelListingPrefix != osCancelListingPrefix {
+		return "", errors.New("Prefix is not cancel transaction")
 	}
 
 	data, err := hex.DecodeString(strings.TrimPrefix(dataString, "0x"))
