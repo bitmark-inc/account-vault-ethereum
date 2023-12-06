@@ -254,7 +254,7 @@ func (w *Wallet) SendTransaction(
 	ctx context.Context,
 	to string,
 	amount *string,
-	data string,
+	data *string,
 	customizeGasPriceInWei *int64,
 	customizedNonce *uint64,
 ) (string, error) {
@@ -284,7 +284,7 @@ func (w *Wallet) SendTransaction(
 		}
 	}
 
-	// Calculate value
+	// Parse value
 	value := big.NewInt(0)
 	if nil != amount {
 		val, ok := big.NewInt(0).SetString(*amount, 0)
@@ -294,9 +294,14 @@ func (w *Wallet) SendTransaction(
 		value = val
 	}
 
-	dataBytes, err := hex.DecodeString(strings.TrimPrefix(data, "0x"))
-	if err != nil {
-		return "", err
+	// Parse data
+	var dataBytes []byte
+	if nil != data {
+		bytes, err := hex.DecodeString(strings.TrimPrefix(*data, "0x"))
+		if err != nil {
+			return "", err
+		}
+		dataBytes = bytes
 	}
 
 	toAddress := common.HexToAddress(to)
