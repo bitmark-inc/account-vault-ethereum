@@ -18,8 +18,9 @@ import (
 )
 
 const (
-	GasLimitPerMint = 150000
-	GasLimitPerBurn = 50000
+	GasLimitPerMint       = 150000
+	GasLimitPerBurn       = 50000
+	GasLimitApproveForAll = 60000
 )
 
 type FeralfileExhibitionV4Contract struct {
@@ -243,7 +244,7 @@ func (c *FeralfileExhibitionV4Contract) Call(wallet *ethereum.Wallet, method, fu
 			return nil, err
 		}
 
-		t.GasLimit = 120000
+		t.GasLimit = GasLimitApproveForAll
 
 		tx, err := contract.SetApprovalForAll(t, params.Operator, true)
 		if err != nil {

@@ -159,7 +159,7 @@ func (w *Wallet) SignABIParameters(ctx context.Context, types []interface{}, arg
 }
 
 // SignETHTypedDataV4 sign packed function parameters and returns signature
-func (w *Wallet) SignETHTypedDataV4(ctx context.Context, typedDataJson json.RawMessage) (string, error) {
+func (w *Wallet) SignETHTypedDataV4(typedDataJson json.RawMessage) (string, error) {
 	var typedData apitypes.TypedData
 	if err := json.Unmarshal(typedDataJson, &typedData); err != nil {
 		return "", fmt.Errorf("unmarshal typed data: %w", err)
@@ -177,13 +177,13 @@ func (w *Wallet) SignETHTypedDataV4(ctx context.Context, typedDataJson json.RawM
 
 	// add magic string prefix
 	rawData := []byte(fmt.Sprintf("\x19\x01%s%s", string(domainSeparator), string(typedDataHash)))
-	sighash := crypto.Keccak256(rawData)
+	sigHash := crypto.Keccak256(rawData)
 
 	privateKey, err := w.wallet.PrivateKey(w.account)
 	if err != nil {
 		return "", err
 	}
-	signature, err := crypto.Sign(sighash, privateKey)
+	signature, err := crypto.Sign(sigHash, privateKey)
 	if err != nil {
 		return "", err
 	}

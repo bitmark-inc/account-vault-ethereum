@@ -306,7 +306,7 @@ func TestSignETHTypedDataV4(t *testing.T) {
 		}
 	 }`)
 
-	signature, err := w.SignETHTypedDataV4(context.Background(), js)
+	signature, err := w.SignETHTypedDataV4(js)
 	assert.NoError(t, err, "SignETHTypedDataV4 error")
 	assert.Equal(t, "0xe72b657a96fcee4dbd7d5d36c935ddf1ae51af6b7547d6ca3a271d7fda9da0477bba4d555c07ee24b7c94ec85cb37862e840923fb46021b2572d9f72a9995f3301", signature)
 }
