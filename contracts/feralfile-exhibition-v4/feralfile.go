@@ -18,8 +18,9 @@ import (
 )
 
 const (
-	GasLimitPerMint = 150000
-	GasLimitPerBurn = 50000
+	GasLimitPerMint       = 150000
+	GasLimitPerBurn       = 50000
+	GasLimitApproveForAll = 60000
 )
 
 type FeralfileExhibitionV4Contract struct {
@@ -231,6 +232,21 @@ func (c *FeralfileExhibitionV4Contract) Call(wallet *ethereum.Wallet, method, fu
 		}
 
 		tx, err := contract.BuyArtworks(t, r32Val, s32Val, uint8(vVal), saleData)
+		if err != nil {
+			return nil, err
+		}
+		return tx, nil
+	case "approve_for_all":
+		var params struct {
+			Operator common.Address `json:"operator"`
+		}
+		if err := json.Unmarshal(arguments, &params); err != nil {
+			return nil, err
+		}
+
+		t.GasLimit = GasLimitApproveForAll
+
+		tx, err := contract.SetApprovalForAll(t, params.Operator, true)
 		if err != nil {
 			return nil, err
 		}

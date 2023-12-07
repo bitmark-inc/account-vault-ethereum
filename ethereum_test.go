@@ -2,6 +2,7 @@ package ethereum
 
 import (
 	"context"
+	"encoding/json"
 	"errors"
 	"testing"
 
@@ -135,6 +136,179 @@ func TestSignABIParametersWithComplexStruct(t *testing.T) {
 	assert.Equal(t, "0x12dec52a184d8c208dd2643a02f4b1e62ecb69cebf3a8d60baac9d727d962b1a", r)
 	assert.Equal(t, "0x15fa50556eac33f472ce1c085dca4171e89baa658e5d23c012cb8d63b747b2b6", s)
 	assert.Equal(t, "0x1c", v)
+}
+
+func TestSignETHTypedDataV4(t *testing.T) {
+	// NOTE: the signature validation is from https://weijiekoh.github.io/eip712-signing-demo/index.html
+	mnemonic := "exotic syrup achieve seven dial idle isolate vintage very harbor adult oxygen"
+	w, err := NewWalletFromMnemonic(mnemonic, "testnet", "http://127.0.0.1:7545")
+	assert.NoError(t, err)
+
+	js := json.RawMessage(`{
+		"domain": {
+		  "name": "Seaport",
+			"version": "1.5",
+			"chainId": 5,
+			"verifyingContract": "0x00000000000000adc04c56bf30ac9d3c0aaf14dc"
+		},
+		"message": {
+			"offerer": "0x00021a5d2a0ef7c84959991ff79c357cb737d1a7",
+			"zone": "0x0000000000000000000000000000000000000000",
+			"offer": [
+				{
+					"itemType": 2,
+					"token": "0xb9a0ab98e8457ded503d6d3ecdbf2bcc06e6ab3f",
+					"identifierOrCriteria": "300221895159563365540897365039676187549271169",
+					"startAmount": "1",
+					"endAmount": "1"
+				}
+			],
+			"consideration": [
+				{
+					"itemType": 0,
+					"token": "0x0000000000000000000000000000000000000000",
+					"identifierOrCriteria": "0",
+					"startAmount": "1170000000000000000",
+					"endAmount": "1170000000000000000",
+					"recipient": "0x00021a5d2a0ef7c84959991ff79c357cb737d1a7"
+				},
+				{
+					"itemType": 0,
+					"token": "0x0000000000000000000000000000000000000000",
+					"identifierOrCriteria": "0",
+					"startAmount": "30000000000000000",
+					"endAmount": "30000000000000000",
+					"recipient": "0x0000a26b00c1f0df003000390027140000faa719"
+				}
+			],
+			"orderType": 0,
+			"startTime": 1698737840,
+			"endTime": 1714289900,
+			"zoneHash": "0x0000000000000000000000000000000000000000000000000000000000000000",
+			"salt": "0x1d4da48b0000000000000000000000009e1da4edfe34e4d35451a438021bdac2",
+			"conduitKey": "0x0000007b02230091a7ed01230072f7006a004d60a8d4e71d599b8104250f0000",
+			"counter": "0"
+		},
+		"primaryType": "OrderComponents",
+		"types": {
+		   "EIP712Domain": [
+			  {
+				 "name":"name",
+				 "type":"string"
+			  },
+			  {
+				 "name":"version",
+				 "type":"string"
+			  },
+			  {
+				 "name":"chainId",
+				 "type":"uint256"
+			  },
+			  {
+				 "name":"verifyingContract",
+				 "type":"address"
+			  }
+		   ],
+		   "OrderComponents": [
+					{
+						"name": "offerer",
+						"type": "address"
+					},
+					{
+						"name": "zone",
+						"type": "address"
+					},
+					{
+						"name": "offer",
+						"type": "OfferItem[]"
+					},
+					{
+						"name": "consideration",
+						"type": "ConsiderationItem[]"
+					},
+					{
+						"name": "orderType",
+						"type": "uint8"
+					},
+					{
+						"name": "startTime",
+						"type": "uint256"
+					},
+					{
+						"name": "endTime",
+						"type": "uint256"
+					},
+					{
+						"name": "zoneHash",
+						"type": "bytes32"
+					},
+					{
+						"name": "salt",
+						"type": "uint256"
+					},
+					{
+						"name": "conduitKey",
+						"type": "bytes32"
+					},
+					{
+						"name": "counter",
+						"type": "uint256"
+					}
+				],
+				"OfferItem": [
+					{
+						"name": "itemType",
+						"type": "uint8"
+					},
+					{
+						"name": "token",
+						"type": "address"
+					},
+					{
+						"name": "identifierOrCriteria",
+						"type": "uint256"
+					},
+					{
+						"name": "startAmount",
+						"type": "uint256"
+					},
+					{
+						"name": "endAmount",
+						"type": "uint256"
+					}
+				],
+				"ConsiderationItem": [
+					{
+						"name": "itemType",
+						"type": "uint8"
+					},
+					{
+						"name": "token",
+						"type": "address"
+					},
+					{
+						"name": "identifierOrCriteria",
+						"type": "uint256"
+					},
+					{
+						"name": "startAmount",
+						"type": "uint256"
+					},
+					{
+						"name": "endAmount",
+						"type": "uint256"
+					},
+					{
+						"name": "recipient",
+						"type": "address"
+					}
+				]
+		}
+	 }`)
+
+	signature, err := w.SignETHTypedDataV4(js)
+	assert.NoError(t, err, "SignETHTypedDataV4 error")
+	assert.Equal(t, "0xe72b657a96fcee4dbd7d5d36c935ddf1ae51af6b7547d6ca3a271d7fda9da0477bba4d555c07ee24b7c94ec85cb37862e840923fb46021b2572d9f72a9995f3301", signature)
 }
 
 func TestSignABIParametersWithInvalidType(t *testing.T) {

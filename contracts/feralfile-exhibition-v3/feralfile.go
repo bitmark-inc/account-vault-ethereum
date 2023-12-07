@@ -19,6 +19,8 @@ import (
 const (
 	GasLimitPerMint         = 450000
 	GasLimitPerAuthTransfer = 150000
+	GasLimitTransfer        = 120000
+	GasLimitApproveForAll   = 60000
 )
 
 type FeralfileExhibitionV3Contract struct {
@@ -224,6 +226,38 @@ func (c *FeralfileExhibitionV3Contract) Call(wallet *ethereum.Wallet, method, fu
 		}
 
 		tx, err := contract.BurnEditions(t, burnParams)
+		if err != nil {
+			return nil, err
+		}
+		return tx, nil
+	case "transfer":
+		var params struct {
+			To      common.Address  `json:"to"`
+			TokenID ethereum.BigInt `json:"token_id"`
+		}
+		if err := json.Unmarshal(arguments, &params); err != nil {
+			return nil, err
+		}
+
+		t.GasLimit = GasLimitTransfer
+
+		tx, err := contract.SafeTransferFrom(t,
+			common.HexToAddress(wallet.Account()), params.To, &params.TokenID.Int)
+		if err != nil {
+			return nil, err
+		}
+		return tx, nil
+	case "approve_for_all":
+		var params struct {
+			Operator common.Address `json:"operator"`
+		}
+		if err := json.Unmarshal(arguments, &params); err != nil {
+			return nil, err
+		}
+
+		t.GasLimit = GasLimitApproveForAll
+
+		tx, err := contract.SetApprovalForAll(t, params.Operator, true)
 		if err != nil {
 			return nil, err
 		}

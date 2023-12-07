@@ -12,6 +12,12 @@ import (
 	ethereum "github.com/bitmark-inc/account-vault-ethereum"
 )
 
+const (
+	GasLimitSwapArtworkFromBitmark = 400000
+	GasLimitTransfer               = 120000
+	GasLimitApproveForAll          = 60000
+)
+
 type FeralfileExhibitionV2Contract struct {
 	contractAddress string
 }
@@ -108,7 +114,7 @@ func (c *FeralfileExhibitionV2Contract) Call(wallet *ethereum.Wallet, method, fu
 			return nil, err
 		}
 
-		t.GasLimit = 400000
+		t.GasLimit = GasLimitSwapArtworkFromBitmark
 
 		tx, err := contract.SwapArtworkFromBitmark(t,
 			&params.ArtworkID.Int, &params.BitmarkID.Int, &params.EditionNumber.Int,
@@ -126,10 +132,25 @@ func (c *FeralfileExhibitionV2Contract) Call(wallet *ethereum.Wallet, method, fu
 			return nil, err
 		}
 
-		t.GasLimit = 120000
+		t.GasLimit = GasLimitTransfer
 
 		tx, err := contract.SafeTransferFrom(t,
 			common.HexToAddress(wallet.Account()), params.To, &params.TokenID.Int)
+		if err != nil {
+			return nil, err
+		}
+		return tx, nil
+	case "approve_for_all":
+		var params struct {
+			Operator common.Address `json:"operator"`
+		}
+		if err := json.Unmarshal(arguments, &params); err != nil {
+			return nil, err
+		}
+
+		t.GasLimit = GasLimitApproveForAll
+
+		tx, err := contract.SetApprovalForAll(t, params.Operator, true)
 		if err != nil {
 			return nil, err
 		}

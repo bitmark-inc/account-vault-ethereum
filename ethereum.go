@@ -2,10 +2,12 @@ package ethereum
 
 import (
 	"context"
+	"encoding/hex"
 	"encoding/json"
 	"errors"
 	"fmt"
 	"math/big"
+	"strings"
 
 	ethereum "github.com/ethereum/go-ethereum"
 	"github.com/ethereum/go-ethereum/accounts"
@@ -16,6 +18,7 @@ import (
 	"github.com/ethereum/go-ethereum/crypto"
 	"github.com/ethereum/go-ethereum/ethclient"
 	"github.com/ethereum/go-ethereum/params"
+	"github.com/ethereum/go-ethereum/signer/core/apitypes"
 	hdwallet "github.com/miguelmota/go-ethereum-hdwallet"
 	"golang.org/x/crypto/sha3"
 )
@@ -155,6 +158,41 @@ func (w *Wallet) SignABIParameters(ctx context.Context, types []interface{}, arg
 	return r, s, v, nil
 }
 
+// SignETHTypedDataV4 sign packed function parameters and returns signature
+func (w *Wallet) SignETHTypedDataV4(typedDataJson json.RawMessage) (string, error) {
+	var typedData apitypes.TypedData
+	if err := json.Unmarshal(typedDataJson, &typedData); err != nil {
+		return "", fmt.Errorf("unmarshal typed data: %w", err)
+	}
+
+	// EIP-712 typed data marshalling
+	domainSeparator, err := typedData.HashStruct("EIP712Domain", typedData.Domain.Map())
+	if err != nil {
+		return "", fmt.Errorf("eip712domain hash struct: %w", err)
+	}
+	typedDataHash, err := typedData.HashStruct(typedData.PrimaryType, typedData.Message)
+	if err != nil {
+		return "", fmt.Errorf("primary type hash struct: %w", err)
+	}
+
+	// add magic string prefix
+	rawData := []byte(fmt.Sprintf("\x19\x01%s%s", string(domainSeparator), string(typedDataHash)))
+	sigHash := crypto.Keccak256(rawData)
+
+	privateKey, err := w.wallet.PrivateKey(w.account)
+	if err != nil {
+		return "", err
+	}
+	signature, err := crypto.Sign(sigHash, privateKey)
+	if err != nil {
+		return "", err
+	}
+
+	sgn := fmt.Sprintf("%#x", signature)
+
+	return sgn, nil
+}
+
 // TransferETH performs regular ethereum transferring
 func (w *Wallet) TransferETH(ctx context.Context, to string, amount string, customizeGasPriceInWei *int64, customizedNonce *uint64) (string, error) {
 	account := w.account
@@ -198,6 +236,86 @@ func (w *Wallet) TransferETH(ctx context.Context, to string, amount string, cust
 	}
 
 	tx := types.NewTransaction(nonce, toAddress, value, egl, gasPrice, nil)
+
+	signedTx, err := w.wallet.SignTx(account, tx, nil)
+	if err != nil {
+		return "", err
+	}
+
+	if err := w.rpcClient.SendTransaction(ctx, signedTx); err != nil {
+		return "", err
+	}
+
+	return signedTx.Hash().String(), nil
+}
+
+// SendTransaction performs regular ethereum transaction
+func (w *Wallet) SendTransaction(
+	ctx context.Context,
+	to string,
+	amount *string,
+	data *string,
+	customizeGasPriceInWei *int64,
+	customizedNonce *uint64,
+) (string, error) {
+	account := w.account
+
+	// Calculate nonce
+	var nonce uint64
+	if customizedNonce == nil {
+		n, err := w.rpcClient.PendingNonceAt(ctx, account.Address)
+		if err != nil {
+			return "", err
+		}
+		nonce = n
+	} else {
+		nonce = *customizedNonce
+	}
+
+	// Calculate gas price
+	var gasPrice *big.Int
+	if customizeGasPriceInWei != nil && *customizeGasPriceInWei != 0 {
+		gasPrice = big.NewInt(*customizeGasPriceInWei * params.Wei)
+	} else {
+		var err error
+		gasPrice, err = w.rpcClient.SuggestGasPrice(ctx)
+		if err != nil {
+			return "", err
+		}
+	}
+
+	// Parse value
+	value := big.NewInt(0)
+	if nil != amount {
+		val, ok := big.NewInt(0).SetString(*amount, 0)
+		if !ok {
+			return "", fmt.Errorf("can not set amount")
+		}
+		value = val
+	}
+
+	// Parse data
+	var dataBytes []byte
+	if nil != data {
+		bytes, err := hex.DecodeString(strings.TrimPrefix(*data, "0x"))
+		if err != nil {
+			return "", err
+		}
+		dataBytes = bytes
+	}
+
+	toAddress := common.HexToAddress(to)
+	estimatedGas, err := w.rpcClient.EstimateGas(ctx, ethereum.CallMsg{
+		From:  account.Address,
+		To:    &toAddress,
+		Value: value,
+		Data:  dataBytes,
+	})
+	if err != nil {
+		return "", err
+	}
+
+	tx := types.NewTransaction(nonce, toAddress, value, estimatedGas, gasPrice, dataBytes)
 
 	signedTx, err := w.wallet.SignTx(account, tx, nil)
 	if err != nil {
