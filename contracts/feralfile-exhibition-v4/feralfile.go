@@ -20,7 +20,7 @@ import (
 const (
 	GasLimitPerMint       = 150000
 	GasLimitPerBurn       = 50000
-	GasLimitApproveForAll = 60000
+	GasLimitApproveForAll = 80000
 )
 
 type FeralfileExhibitionV4Contract struct {

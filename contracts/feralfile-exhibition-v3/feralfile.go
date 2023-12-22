@@ -20,7 +20,7 @@ const (
 	GasLimitPerMint         = 450000
 	GasLimitPerAuthTransfer = 150000
 	GasLimitTransfer        = 120000
-	GasLimitApproveForAll   = 60000
+	GasLimitApproveForAll   = 80000
 )
 
 type FeralfileExhibitionV3Contract struct {
