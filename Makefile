@@ -31,6 +31,8 @@ build-contract: check setup-submodules
 	jq -r ".abi" build/contracts/FeralfileExhibitionV4.json > ./build/FeralfileExhibitionV4.abi && \
 	jq -r ".bytecode" build/contracts/FeralfileEnglishAuction.json > ./build/FeralfileEnglishAuction.bin && \
 	jq -r ".abi" build/contracts/FeralfileEnglishAuction.json > ./build/FeralfileEnglishAuction.abi && \
+	jq -r ".bytecode" build/contracts/FeralFileAirdropV1.json > ./build/FeralFileAirdropV1.bin && \
+	jq -r ".abi" build/contracts/FeralFileAirdropV1.json > ./build/FeralFileAirdropV1.abi && \
 	cd -
 
 build: build-contract
@@ -38,3 +40,4 @@ build: build-contract
 	abigen --abi sub_modules/feralfile-exhibition-smart-contract/build/FeralfileExhibitionV3.abi --bin sub_modules/feralfile-exhibition-smart-contract/build/FeralfileExhibitionV3.bin --pkg feralfilev3 -type FeralfileExhibitionV3 --out contracts/feralfile-exhibition-v3/abi.go
 	abigen --abi sub_modules/feralfile-exhibition-smart-contract/build/FeralfileExhibitionV4.abi --bin sub_modules/feralfile-exhibition-smart-contract/build/FeralfileExhibitionV4.bin --pkg feralfilev4 -type FeralfileExhibitionV4 --out contracts/feralfile-exhibition-v4/abi.go
 	abigen --abi sub_modules/feralfile-exhibition-smart-contract/build/FeralfileEnglishAuction.abi --bin sub_modules/feralfile-exhibition-smart-contract/build/FeralfileEnglishAuction.bin --pkg english_auction -type FeralfileEnglishAuction --out contracts/feralfile-english-auction/abi.go
+	abigen --abi sub_modules/feralfile-exhibition-smart-contract/build/FeralFileAirdropV1.abi --bin sub_modules/feralfile-exhibition-smart-contract/build/FeralFileAirdropV1.bin --pkg airdropv1 -type FeralFileAirdropV1 --out contracts/feralfile-airdrop-v1/abi.go
