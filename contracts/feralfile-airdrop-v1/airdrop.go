@@ -21,8 +21,11 @@ func FeralFileAirdropV1ContractFactory(contractAddress string) ethereum.Contract
 
 func (c *FeralFileAirdropV1Contract) Deploy(wallet *ethereum.Wallet, arguments json.RawMessage) (string, string, error) {
 	var params struct {
-		TokenType uint8  `json:"token_type"`
-		TokenURI  string `json:"token_uri"`
+		TokenType   uint8  `json:"token_type"`
+		TokenURI    string `json:"token_uri"`
+		ContractURI string `json:"contract_uri"`
+		Burnable    bool   `json:"burnable"`
+		Bridgeable  bool   `json:"bridgeable"`
 	}
 
 	if err := json.Unmarshal(arguments, &params); err != nil {
@@ -39,6 +42,9 @@ func (c *FeralFileAirdropV1Contract) Deploy(wallet *ethereum.Wallet, arguments j
 		wallet.RPCClient(),
 		params.TokenType,
 		params.TokenURI,
+		params.ContractURI,
+		params.Burnable,
+		params.Bridgeable,
 	)
 	if err != nil {
 		return "", "", err
