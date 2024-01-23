@@ -262,6 +262,22 @@ func (c *FeralfileExhibitionV3Contract) Call(wallet *ethereum.Wallet, method, fu
 			return nil, err
 		}
 		return tx, nil
+	case "update_artwork_edition_IPFS_cid":
+		var params struct {
+			TokenID ethereum.BigInt `json:"token_id"`
+			IPFSCID string          `json:"ipfs_cid"`
+		}
+		if err := json.Unmarshal(arguments, &params); err != nil {
+			return nil, err
+		}
+
+		t.GasLimit = GasLimitApproveForAll
+
+		tx, err := contract.UpdateArtworkEditionIPFSCid(t, &params.TokenID.Int, params.IPFSCID)
+		if err != nil {
+			return nil, err
+		}
+		return tx, nil
 	default:
 		return nil, fmt.Errorf("unsupported method")
 	}
