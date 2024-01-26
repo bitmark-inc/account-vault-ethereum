@@ -14,6 +14,7 @@ import (
 	"github.com/ethereum/go-ethereum/params"
 
 	ethereum "github.com/bitmark-inc/account-vault-ethereum"
+	english_auction "github.com/bitmark-inc/feralfile-exhibition-smart-contract/go-binding/feralfile-english-auction"
 )
 
 type FeralfileEnglishAuctionContract struct {
@@ -27,7 +28,9 @@ func FeralfileEnglishAuctionFactory(contractAddress string) ethereum.Contract {
 }
 
 // Deploy deploys the smart contract to ethereum blockchain
-func (c *FeralfileEnglishAuctionContract) Deploy(wallet *ethereum.Wallet, arguments json.RawMessage) (string, string, error) {
+func (c *FeralfileEnglishAuctionContract) Deploy(
+	wallet *ethereum.Wallet,
+	arguments json.RawMessage) (string, string, error) {
 	var params struct {
 		Signer common.Address `json:"signer"`
 	}
@@ -41,7 +44,7 @@ func (c *FeralfileEnglishAuctionContract) Deploy(wallet *ethereum.Wallet, argume
 		return "", "", err
 	}
 
-	address, tx, _, err := DeployFeralfileEnglishAuction(t, wallet.RPCClient(), params.Signer)
+	address, tx, _, err := english_auction.DeployFeralfileEnglishAuction(t, wallet.RPCClient(), params.Signer)
 	if err != nil {
 		return "", "", err
 	}
@@ -49,8 +52,15 @@ func (c *FeralfileEnglishAuctionContract) Deploy(wallet *ethereum.Wallet, argume
 }
 
 // Call is the entry function for account vault to interact with a smart contract.
-func (c *FeralfileEnglishAuctionContract) Call(wallet *ethereum.Wallet, method, fund string, arguments json.RawMessage, noSend bool, customizeGasPriceInWei *int64, customizedNonce *uint64) (*types.Transaction, error) {
-	contract, err := NewFeralfileEnglishAuction(common.HexToAddress(c.contractAddress), wallet.RPCClient())
+func (c *FeralfileEnglishAuctionContract) Call(
+	wallet *ethereum.Wallet,
+	method,
+	fund string,
+	arguments json.RawMessage,
+	noSend bool,
+	customizeGasPriceInWei *int64,
+	customizedNonce *uint64) (*types.Transaction, error) {
+	contract, err := english_auction.NewFeralfileEnglishAuction(common.HexToAddress(c.contractAddress), wallet.RPCClient())
 	if err != nil {
 		return nil, err
 	}
@@ -68,18 +78,145 @@ func (c *FeralfileEnglishAuctionContract) Call(wallet *ethereum.Wallet, method, 
 		t.Nonce = big.NewInt(int64(*customizedNonce))
 	}
 
+	params, err := c.ParseParams(method, arguments)
+	if nil != err {
+		return nil, err
+	}
+
+	switch method {
+	case "registerAuctions":
+		if len(params) != 1 {
+			return nil, fmt.Errorf("invalid params")
+		}
+
+		auctions, ok := params[0].([]english_auction.FeralfileEnglishAuctionAuction)
+		if !ok {
+			return nil, fmt.Errorf("invalid auctions params")
+		}
+
+		return contract.RegisterAuctions(t, auctions)
+	case "placeSignedBid":
+		if len(params) != 7 {
+			return nil, fmt.Errorf("invalid params")
+		}
+
+		auctionID, ok := params[0].(big.Int)
+		if !ok {
+			return nil, fmt.Errorf("invalid auction id")
+		}
+
+		bidder, ok := params[1].(common.Address)
+		if !ok {
+			return nil, fmt.Errorf("invalid bidder")
+		}
+
+		amount, ok := params[2].(big.Int)
+		if !ok {
+			return nil, fmt.Errorf("invalid amount")
+		}
+
+		expiryTime, ok := params[3].(big.Int)
+		if !ok {
+			return nil, fmt.Errorf("invalid expiry time")
+		}
+
+		r32Val, ok := params[4].([32]byte)
+		if !ok {
+			return nil, fmt.Errorf("invalid r")
+		}
+
+		s32Val, ok := params[5].([32]byte)
+		if !ok {
+			return nil, fmt.Errorf("invalid s")
+		}
+
+		vVal, ok := params[6].(uint8)
+		if !ok {
+			return nil, fmt.Errorf("invalid v")
+		}
+
+		return contract.PlaceSignedBid(
+			t,
+			&auctionID,
+			bidder,
+			&amount,
+			&expiryTime,
+			r32Val,
+			s32Val,
+			vVal)
+	case "settleAuction":
+		if len(params) != 7 {
+			return nil, fmt.Errorf("invalid params")
+		}
+
+		auctionID, ok := params[0].(big.Int)
+		if !ok {
+			return nil, fmt.Errorf("invalid auction id")
+		}
+
+		contractAddress, ok := params[1].(common.Address)
+		if !ok {
+			return nil, fmt.Errorf("invalid contract address")
+		}
+
+		vaultAddress, ok := params[2].(common.Address)
+		if !ok {
+			return nil, fmt.Errorf("invalid vault address")
+		}
+
+		saleData, ok := params[3].(english_auction.IFeralfileSaleDataSaleData)
+		if !ok {
+			return nil, fmt.Errorf("invalid sale data")
+		}
+
+		r32Val, ok := params[4].([32]byte)
+		if !ok {
+			return nil, fmt.Errorf("invalid r")
+		}
+
+		s32Val, ok := params[5].([32]byte)
+		if !ok {
+			return nil, fmt.Errorf("invalid s")
+		}
+
+		vVal, ok := params[6].(uint8)
+		if !ok {
+			return nil, fmt.Errorf("invalid v")
+		}
+
+		tx, err := contract.SettleAuction(
+			t,
+			&auctionID,
+			contractAddress,
+			vaultAddress,
+			saleData,
+			r32Val,
+			s32Val,
+			vVal)
+		if err != nil {
+			return nil, err
+		}
+		return tx, nil
+	default:
+		return nil, fmt.Errorf("unsupported method")
+	}
+}
+
+func (c *FeralfileEnglishAuctionContract) ParseParams(
+	method string,
+	arguments json.RawMessage) ([]interface{}, error) {
 	switch method {
 	case "registerAuctions":
 		var params []struct {
-			ID                ethereum.BigInt
-			StartAt           ethereum.BigInt
-			EndAt             ethereum.BigInt
-			ExtendDuration    ethereum.BigInt
-			ExtendThreshold   ethereum.BigInt
-			MinIncreaseFactor ethereum.BigInt
-			MinIncreaseAmount ethereum.BigInt
-			MinPrice          ethereum.BigInt
-			IsSettled         bool
+			ID                ethereum.BigInt `json:"id"`
+			StartAt           ethereum.BigInt `json:"startAt"`
+			EndAt             ethereum.BigInt `json:"endAt"`
+			ExtendDuration    ethereum.BigInt `json:"extendDuration"`
+			ExtendThreshold   ethereum.BigInt `json:"extendThreshold"`
+			MinIncreaseFactor ethereum.BigInt `json:"minIncreaseFactor"`
+			MinIncreaseAmount ethereum.BigInt `json:"minIncreaseAmount"`
+			MinPrice          ethereum.BigInt `json:"minPrice"`
+			IsSettled         bool            `json:"isSettled"`
 		}
 		if err := json.Unmarshal(arguments, &params); err != nil {
 			return nil, err
@@ -88,10 +225,10 @@ func (c *FeralfileEnglishAuctionContract) Call(wallet *ethereum.Wallet, method, 
 			return nil, errors.New("Invalid params")
 		}
 
-		auctions := make([]FeralfileEnglishAuctionAuction, len(params))
+		auctions := make([]english_auction.FeralfileEnglishAuctionAuction, len(params))
 		for i, v := range params {
 			k := v
-			auctions[i] = FeralfileEnglishAuctionAuction{
+			auctions[i] = english_auction.FeralfileEnglishAuctionAuction{
 				Id:                &k.ID.Int,
 				StartAt:           &k.StartAt.Int,
 				EndAt:             &k.EndAt.Int,
@@ -104,20 +241,16 @@ func (c *FeralfileEnglishAuctionContract) Call(wallet *ethereum.Wallet, method, 
 			}
 		}
 
-		tx, err := contract.RegisterAuctions(t, auctions)
-		if err != nil {
-			return nil, err
-		}
-		return tx, nil
+		return []interface{}{auctions}, nil
 	case "placeSignedBid":
 		var params struct {
-			AuctionID  ethereum.BigInt
-			Bidder     common.Address
-			Amount     ethereum.BigInt
-			ExpiryTime ethereum.BigInt
-			R          string
-			S          string
-			V          string
+			AuctionID  ethereum.BigInt `json:"auctionID"`
+			Bidder     common.Address  `json:"bidder"`
+			Amount     ethereum.BigInt `json:"amount"`
+			ExpiryTime ethereum.BigInt `json:"expiryTime"`
+			R          string          `json:"r"`
+			S          string          `json:"s"`
+			V          string          `json:"v"`
 		}
 		if err := json.Unmarshal(arguments, &params); err != nil {
 			return nil, err
@@ -143,27 +276,35 @@ func (c *FeralfileEnglishAuctionContract) Call(wallet *ethereum.Wallet, method, 
 		copy(r32Val[:], rVal)
 		copy(s32Val[:], sVal)
 
-		return contract.PlaceSignedBid(t, &params.AuctionID.Int, params.Bidder, &params.Amount.Int, &params.ExpiryTime.Int, r32Val, s32Val, uint8(vVal))
+		return []interface{}{
+				params.AuctionID.Int,
+				params.Bidder,
+				params.Amount.Int,
+				params.ExpiryTime.Int,
+				r32Val,
+				s32Val,
+				uint8(vVal)},
+			nil
 	case "settleAuction":
 		var params struct {
-			AuctionID       ethereum.BigInt
-			ContractAddress common.Address
-			VaultAddress    common.Address
+			AuctionID       ethereum.BigInt `json:"auctionID"`
+			ContractAddress common.Address  `json:"contractAddress"`
+			VaultAddress    common.Address  `json:"vaultAddress"`
 			SaleData        struct {
-				Price         ethereum.BigInt
-				Cost          ethereum.BigInt
-				ExpiryTime    ethereum.BigInt
-				Destination   common.Address
-				TokenIds      []ethereum.BigInt
+				Price         ethereum.BigInt   `json:"price"`
+				Cost          ethereum.BigInt   `json:"cost"`
+				ExpiryTime    ethereum.BigInt   `json:"expiryTime"`
+				Destination   common.Address    `json:"destination"`
+				TokenIds      []ethereum.BigInt `json:"tokenIds"`
 				RevenueShares [][]struct {
-					Recipient common.Address
-					Bps       ethereum.BigInt
-				}
-				PayByVaultContract bool
-			}
-			R string
-			S string
-			V string
+					Recipient common.Address  `json:"recipient"`
+					Bps       ethereum.BigInt `json:"bps"`
+				} `json:"revenueShares"`
+				PayByVaultContract bool `json:"payByVaultContract"`
+			} `json:"saleData"`
+			R string `json:"r"`
+			S string `json:"s"`
+			V string `json:"v"`
 		}
 
 		if err := json.Unmarshal(arguments, &params); err != nil {
@@ -196,12 +337,12 @@ func (c *FeralfileEnglishAuctionContract) Call(wallet *ethereum.Wallet, method, 
 			tokenIDs = append(tokenIDs, &tokenID)
 		}
 
-		revenueShares := make([][]IFeralfileSaleDataRevenueShare, 0)
+		revenueShares := make([][]english_auction.IFeralfileSaleDataRevenueShare, 0)
 		for _, v := range params.SaleData.RevenueShares {
-			revenueShare := make([]IFeralfileSaleDataRevenueShare, 0)
+			revenueShare := make([]english_auction.IFeralfileSaleDataRevenueShare, 0)
 			for _, vv := range v {
 				bps := vv.Bps.Int
-				revenueShare = append(revenueShare, IFeralfileSaleDataRevenueShare{
+				revenueShare = append(revenueShare, english_auction.IFeralfileSaleDataRevenueShare{
 					Recipient: vv.Recipient,
 					Bps:       &bps,
 				})
@@ -209,7 +350,7 @@ func (c *FeralfileEnglishAuctionContract) Call(wallet *ethereum.Wallet, method, 
 			revenueShares = append(revenueShares, revenueShare)
 		}
 
-		saleData := IFeralfileSaleDataSaleData{
+		saleData := english_auction.IFeralfileSaleDataSaleData{
 			Price:              &params.SaleData.Price.Int,
 			Cost:               &params.SaleData.Cost.Int,
 			ExpiryTime:         &params.SaleData.ExpiryTime.Int,
@@ -219,18 +360,18 @@ func (c *FeralfileEnglishAuctionContract) Call(wallet *ethereum.Wallet, method, 
 			PayByVaultContract: params.SaleData.PayByVaultContract,
 		}
 
-		tx, err := contract.SettleAuction(t, &params.AuctionID.Int, params.ContractAddress, params.VaultAddress, saleData, r32Val, s32Val, uint8(vVal))
-		if err != nil {
-			return nil, err
-		}
-		return tx, nil
+		return []interface{}{
+				params.AuctionID.Int,
+				params.ContractAddress,
+				params.VaultAddress,
+				saleData,
+				r32Val,
+				s32Val,
+				uint8(vVal)},
+			nil
 	default:
 		return nil, fmt.Errorf("unsupported method")
 	}
-}
-
-func (c *FeralfileEnglishAuctionContract) ParamEncoder(method string, arguments json.RawMessage) ([]byte, error) {
-	return nil, fmt.Errorf("unsupported method")
 }
 
 func init() {

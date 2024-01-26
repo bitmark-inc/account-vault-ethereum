@@ -3,10 +3,13 @@ package airdropv1
 import (
 	"encoding/json"
 	"fmt"
+	"math/big"
 
 	ethereum "github.com/bitmark-inc/account-vault-ethereum"
+	airdropv1 "github.com/bitmark-inc/feralfile-exhibition-smart-contract/go-binding/feralfile-airdrop-v1"
 	"github.com/ethereum/go-ethereum/common"
 	"github.com/ethereum/go-ethereum/core/types"
+	"github.com/ethereum/go-ethereum/params"
 )
 
 type FeralFileAirdropV1Contract struct {
@@ -19,7 +22,9 @@ func FeralFileAirdropV1ContractFactory(contractAddress string) ethereum.Contract
 	}
 }
 
-func (c *FeralFileAirdropV1Contract) Deploy(wallet *ethereum.Wallet, arguments json.RawMessage) (string, string, error) {
+func (c *FeralFileAirdropV1Contract) Deploy(
+	wallet *ethereum.Wallet,
+	arguments json.RawMessage) (string, string, error) {
 	var params struct {
 		TokenType   uint8  `json:"token_type"`
 		TokenURI    string `json:"token_uri"`
@@ -37,7 +42,7 @@ func (c *FeralFileAirdropV1Contract) Deploy(wallet *ethereum.Wallet, arguments j
 		return "", "", err
 	}
 
-	address, tx, _, err := DeployFeralFileAirdropV1(
+	address, tx, _, err := airdropv1.DeployFeralFileAirdropV1(
 		t,
 		wallet.RPCClient(),
 		params.TokenType,
@@ -53,12 +58,85 @@ func (c *FeralFileAirdropV1Contract) Deploy(wallet *ethereum.Wallet, arguments j
 	return address.Hex(), tx.Hash().Hex(), nil
 }
 
-func (c *FeralFileAirdropV1Contract) Call(wallet *ethereum.Wallet, method, fund string, arguments json.RawMessage, noSend bool, customizeGasPriceInWei *int64, customizedNonce *uint64) (*types.Transaction, error) {
-	contract, err := NewFeralFileAirdropV1(common.HexToAddress(c.contractAddress), wallet.RPCClient())
+func (c *FeralFileAirdropV1Contract) Call(
+	wallet *ethereum.Wallet,
+	method,
+	fund string,
+	arguments json.RawMessage,
+	noSend bool,
+	customizeGasPriceInWei *int64,
+	customizedNonce *uint64) (*types.Transaction, error) {
+	contract, err := airdropv1.NewFeralFileAirdropV1(
+		common.HexToAddress(c.contractAddress),
+		wallet.RPCClient())
 	if err != nil {
 		return nil, err
 	}
 
+	t, err := wallet.Transactor()
+	if err != nil {
+		return nil, err
+	}
+
+	t.NoSend = noSend
+	if customizeGasPriceInWei != nil && *customizeGasPriceInWei != 0 {
+		t.GasPrice = big.NewInt(*customizeGasPriceInWei * params.Wei)
+	}
+
+	if customizedNonce != nil {
+		t.Nonce = big.NewInt(int64(*customizedNonce))
+	}
+
+	params, err := c.ParseParams(method, arguments)
+	if nil != err {
+		return nil, err
+	}
+
+	switch method {
+	case "mint":
+		if len(params) != 2 {
+			return nil, fmt.Errorf("invalid parameters")
+		}
+
+		tokenID, ok := params[0].(big.Int)
+		if !ok {
+			return nil, fmt.Errorf("invalid token id")
+		}
+
+		amount, ok := params[1].(big.Int)
+		if !ok {
+			return nil, fmt.Errorf("invalid amount")
+		}
+
+		t.GasLimit = 100000
+		return contract.Mint(t, &tokenID, &amount)
+	case "airdrop":
+		if len(params) != 2 {
+			return nil, fmt.Errorf("invalid parameters")
+		}
+
+		tokenID, ok := params[0].(big.Int)
+		if !ok {
+			return nil, fmt.Errorf("invalid token id")
+		}
+
+		to, ok := params[1].([]common.Address)
+		if !ok {
+			return nil, fmt.Errorf("invalid to address")
+		}
+
+		const gasLimitPerItem = 150000
+		t.GasLimit = uint64(gasLimitPerItem * len(to))
+
+		return contract.Airdrop(t, &tokenID, to)
+	}
+
+	return nil, fmt.Errorf("unsupported method")
+}
+
+func (c *FeralFileAirdropV1Contract) ParseParams(
+	method string,
+	arguments json.RawMessage) ([]interface{}, error) {
 	switch method {
 	case "mint":
 		var params struct {
@@ -70,13 +148,7 @@ func (c *FeralFileAirdropV1Contract) Call(wallet *ethereum.Wallet, method, fund 
 			return nil, err
 		}
 
-		t, err := wallet.Transactor()
-		if err != nil {
-			return nil, err
-		}
-
-		t.GasLimit = 100000
-		return contract.Mint(t, &params.TokenID.Int, &params.Amount.Int)
+		return []interface{}{params.TokenID.Int, params.Amount.Int}, nil
 	case "airdrop":
 		var params struct {
 			TokenID *ethereum.BigInt `json:"token_id"`
@@ -90,22 +162,10 @@ func (c *FeralFileAirdropV1Contract) Call(wallet *ethereum.Wallet, method, fund 
 			return nil, fmt.Errorf("invalid token airdrop parameters (to)")
 		}
 
-		t, err := wallet.Transactor()
-		if err != nil {
-			return nil, err
-		}
-
-		const gasLimitPerItem = 150000
-		t.GasLimit = uint64(gasLimitPerItem * len(params.To))
-
-		return contract.Airdrop(t, &params.TokenID.Int, params.To)
+		return []interface{}{params.TokenID.Int, params.To}, nil
+	default:
+		return nil, fmt.Errorf("unsupported method")
 	}
-
-	return nil, fmt.Errorf("unsupported method")
-}
-
-func (c *FeralFileAirdropV1Contract) ParamEncoder(method string, arguments json.RawMessage) ([]byte, error) {
-	return nil, fmt.Errorf("unsupported method")
 }
 
 func init() {

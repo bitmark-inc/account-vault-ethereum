@@ -9,9 +9,20 @@ import (
 
 // Contract is an interface defines how a vault interact with the smart contract
 type Contract interface {
-	Deploy(wallet *Wallet, arguments json.RawMessage) (address string, txID string, err error)
-	Call(wallet *Wallet, method, fund string, arguments json.RawMessage, noSend bool, customizeGasPriceInWei *int64, customizedNonce *uint64) (tx *types.Transaction, err error)
-	ParamEncoder(method string, arguments json.RawMessage) ([]byte, error)
+	Deploy(
+		wallet *Wallet,
+		arguments json.RawMessage) (address string, txID string, err error)
+	Call(
+		wallet *Wallet,
+		method,
+		fund string,
+		arguments json.RawMessage,
+		noSend bool,
+		customizeGasPriceInWei *int64,
+		customizedNonce *uint64) (tx *types.Transaction, err error)
+	ParseParams(
+		method string,
+		arguments json.RawMessage) ([]interface{}, error)
 }
 
 // ContractFactory is a function that takes an address and return a Contract instance
