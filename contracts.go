@@ -9,9 +9,12 @@ import (
 
 // Contract is an interface defines how a vault interact with the smart contract
 type Contract interface {
+	// Deploy deploys the smart contract to ethereum blockchain
 	Deploy(
 		wallet *Wallet,
 		arguments json.RawMessage) (address string, txID string, err error)
+
+	// Call calls a smart contract method
 	Call(
 		wallet *Wallet,
 		method,
@@ -20,7 +23,16 @@ type Contract interface {
 		noSend bool,
 		customizeGasPriceInWei *int64,
 		customizedNonce *uint64) (tx *types.Transaction, err error)
-	ParseParams(
+
+	// Pack packs the method and arguments into a byte array representing
+	// the smart contract call data
+	Pack(
+		method string,
+		arguments json.RawMessage) ([]byte, error)
+
+	// Parse parses the arguments as JSON format into an array of smart
+	// contract function call arguments
+	Parse(
 		method string,
 		arguments json.RawMessage) ([]interface{}, error)
 }

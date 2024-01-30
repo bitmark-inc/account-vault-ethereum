@@ -9,6 +9,7 @@ import (
 	"strconv"
 	"strings"
 
+	"github.com/ethereum/go-ethereum/accounts/abi"
 	"github.com/ethereum/go-ethereum/common"
 	"github.com/ethereum/go-ethereum/core/types"
 	"github.com/ethereum/go-ethereum/params"
@@ -106,7 +107,7 @@ func (c *FeralfileExhibitionV4Contract) Call(
 		t.Nonce = big.NewInt(int64(*customizedNonce))
 	}
 
-	params, err := c.ParseParams(method, arguments)
+	params, err := c.Parse(method, arguments)
 	if nil != err {
 		return nil, err
 	}
@@ -167,11 +168,6 @@ func (c *FeralfileExhibitionV4Contract) Call(
 			return nil, errors.New("Invalid parameters")
 		}
 
-		params, err := c.ParseParams(method, arguments)
-		if nil != err {
-			return nil, err
-		}
-
 		r, ok := params[0].([32]byte)
 		if !ok {
 			return nil, fmt.Errorf("invalid r")
@@ -211,7 +207,23 @@ func (c *FeralfileExhibitionV4Contract) Call(
 	}
 }
 
-func (c *FeralfileExhibitionV4Contract) ParseParams(
+func (c *FeralfileExhibitionV4Contract) Pack(
+	method string,
+	arguments json.RawMessage) ([]byte, error) {
+	parsedABI, err := abi.JSON(strings.NewReader(feralfilev4.FeralfileExhibitionV4ABI))
+	if nil != err {
+		return nil, err
+	}
+
+	parsedArgs, err := c.Parse(method, arguments)
+	if nil != err {
+		return nil, err
+	}
+
+	return parsedABI.Pack(method, parsedArgs...)
+}
+
+func (c *FeralfileExhibitionV4Contract) Parse(
 	method string,
 	arguments json.RawMessage) ([]interface{}, error) {
 	switch method {

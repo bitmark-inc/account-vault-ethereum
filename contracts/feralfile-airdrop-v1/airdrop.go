@@ -4,9 +4,11 @@ import (
 	"encoding/json"
 	"fmt"
 	"math/big"
+	"strings"
 
 	ethereum "github.com/bitmark-inc/account-vault-ethereum"
 	airdropv1 "github.com/bitmark-inc/feralfile-exhibition-smart-contract/go-binding/feralfile-airdrop-v1"
+	"github.com/ethereum/go-ethereum/accounts/abi"
 	"github.com/ethereum/go-ethereum/common"
 	"github.com/ethereum/go-ethereum/core/types"
 	"github.com/ethereum/go-ethereum/params"
@@ -87,7 +89,7 @@ func (c *FeralFileAirdropV1Contract) Call(
 		t.Nonce = big.NewInt(int64(*customizedNonce))
 	}
 
-	params, err := c.ParseParams(method, arguments)
+	params, err := c.Parse(method, arguments)
 	if nil != err {
 		return nil, err
 	}
@@ -134,7 +136,23 @@ func (c *FeralFileAirdropV1Contract) Call(
 	return nil, fmt.Errorf("unsupported method")
 }
 
-func (c *FeralFileAirdropV1Contract) ParseParams(
+func (c *FeralFileAirdropV1Contract) Pack(
+	method string,
+	arguments json.RawMessage) ([]byte, error) {
+	parsedABI, err := abi.JSON(strings.NewReader(airdropv1.FeralFileAirdropV1ABI))
+	if nil != err {
+		return nil, err
+	}
+
+	parsedArgs, err := c.Parse(method, arguments)
+	if nil != err {
+		return nil, err
+	}
+
+	return parsedABI.Pack(method, parsedArgs...)
+}
+
+func (c *FeralFileAirdropV1Contract) Parse(
 	method string,
 	arguments json.RawMessage) ([]interface{}, error) {
 	switch method {

@@ -9,6 +9,7 @@ import (
 	"strconv"
 	"strings"
 
+	"github.com/ethereum/go-ethereum/accounts/abi"
 	"github.com/ethereum/go-ethereum/common"
 	"github.com/ethereum/go-ethereum/core/types"
 	"github.com/ethereum/go-ethereum/params"
@@ -78,7 +79,7 @@ func (c *FeralfileEnglishAuctionContract) Call(
 		t.Nonce = big.NewInt(int64(*customizedNonce))
 	}
 
-	params, err := c.ParseParams(method, arguments)
+	params, err := c.Parse(method, arguments)
 	if nil != err {
 		return nil, err
 	}
@@ -202,7 +203,23 @@ func (c *FeralfileEnglishAuctionContract) Call(
 	}
 }
 
-func (c *FeralfileEnglishAuctionContract) ParseParams(
+func (c *FeralfileEnglishAuctionContract) Pack(
+	method string,
+	arguments json.RawMessage) ([]byte, error) {
+	parsedABI, err := abi.JSON(strings.NewReader(english_auction.FeralfileEnglishAuctionABI))
+	if nil != err {
+		return nil, err
+	}
+
+	parsedArgs, err := c.Parse(method, arguments)
+	if nil != err {
+		return nil, err
+	}
+
+	return parsedABI.Pack(method, parsedArgs...)
+}
+
+func (c *FeralfileEnglishAuctionContract) Parse(
 	method string,
 	arguments json.RawMessage) ([]interface{}, error) {
 	switch method {

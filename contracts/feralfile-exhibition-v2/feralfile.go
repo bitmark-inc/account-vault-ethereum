@@ -4,7 +4,9 @@ import (
 	"encoding/json"
 	"fmt"
 	"math/big"
+	"strings"
 
+	"github.com/ethereum/go-ethereum/accounts/abi"
 	"github.com/ethereum/go-ethereum/common"
 	"github.com/ethereum/go-ethereum/core/types"
 	"github.com/ethereum/go-ethereum/params"
@@ -91,7 +93,7 @@ func (c *FeralfileExhibitionV2Contract) Call(
 		t.Nonce = big.NewInt(int64(*customizedNonce))
 	}
 
-	params, err := c.ParseParams(method, arguments)
+	params, err := c.Parse(method, arguments)
 	if nil != err {
 		return nil, err
 	}
@@ -207,7 +209,23 @@ func (c *FeralfileExhibitionV2Contract) Call(
 	}
 }
 
-func (c *FeralfileExhibitionV2Contract) ParseParams(
+func (c *FeralfileExhibitionV2Contract) Pack(
+	method string,
+	arguments json.RawMessage) ([]byte, error) {
+	parsedABI, err := abi.JSON(strings.NewReader(feralfilev2.FeralfileExhibitionV2ABI))
+	if nil != err {
+		return nil, err
+	}
+
+	parsedArgs, err := c.Parse(method, arguments)
+	if nil != err {
+		return nil, err
+	}
+
+	return parsedABI.Pack(method, parsedArgs...)
+}
+
+func (c *FeralfileExhibitionV2Contract) Parse(
 	method string,
 	arguments json.RawMessage) ([]interface{}, error) {
 	switch method {
