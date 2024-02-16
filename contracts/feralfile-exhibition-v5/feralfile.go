@@ -198,12 +198,12 @@ func (c *FeralfileExhibitionV5Contract) Call(wallet *ethereum.Wallet, method, fu
 			tokenIDs = append(tokenIDs, &tokenID)
 		}
 
-		revenueShares := make([][]IFeralfileSaleDataRevenueShare, 0)
+		revenueShares := make([][]IFeralfileSaleDataV2RevenueShare, 0)
 		for _, v := range params.SaleData.RevenueShares {
-			revenueShare := make([]IFeralfileSaleDataRevenueShare, 0)
+			revenueShare := make([]IFeralfileSaleDataV2RevenueShare, 0)
 			for _, vv := range v {
 				bps := vv.Bps.Int
-				revenueShare = append(revenueShare, IFeralfileSaleDataRevenueShare{
+				revenueShare = append(revenueShare, IFeralfileSaleDataV2RevenueShare{
 					Recipient: vv.Recipient,
 					Bps:       &bps,
 				})
@@ -211,7 +211,7 @@ func (c *FeralfileExhibitionV5Contract) Call(wallet *ethereum.Wallet, method, fu
 			revenueShares = append(revenueShares, revenueShare)
 		}
 
-		saleData := IFeralfileSaleDataSaleData{
+		saleData := IFeralfileSaleDataV2SaleData{
 			Price:              &params.SaleData.Price.Int,
 			Cost:               &params.SaleData.Cost.Int,
 			ExpiryTime:         &params.SaleData.ExpiryTime.Int,
