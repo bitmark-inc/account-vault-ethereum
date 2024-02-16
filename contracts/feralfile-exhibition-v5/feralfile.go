@@ -161,7 +161,7 @@ func (c *FeralfileExhibitionV5Contract) Call(wallet *ethereum.Wallet, method, fu
 					Bps       ethereum.BigInt `json:"bps"`
 				} `json:"revenue_shares"`
 				PayByVaultContract bool            `json:"pay_by_vault_contract"`
-				BiddingUnixNano    ethereum.BigInt `json:"bidding_unix_nano"`
+				BiddingUnix        ethereum.BigInt `json:"bidding_unix"`
 			} `json:"sale_data"`
 			R string `json:"r"`
 			S string `json:"s"`
@@ -219,7 +219,7 @@ func (c *FeralfileExhibitionV5Contract) Call(wallet *ethereum.Wallet, method, fu
 			TokenIds:           tokenIDs,
 			RevenueShares:      revenueShares,
 			PayByVaultContract: params.SaleData.PayByVaultContract,
-			BiddingUnixNano:    &params.SaleData.BiddingUnixNano.Int,
+			BiddingUnix:        &params.SaleData.BiddingUnix.Int,
 		}
 
 		tx, err := contract.BuyArtworks(t, r32Val, s32Val, uint8(vVal), saleData)
