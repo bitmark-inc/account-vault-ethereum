@@ -17,7 +17,7 @@ import (
 )
 
 const (
-	GasLimitPerMint       = 150000
+	GasLimitPerMint       = 250000
 	GasLimitPerBurn       = 50000
 	GasLimitApproveForAll = 80000
 )
