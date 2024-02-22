@@ -242,6 +242,8 @@ func (c *FeralfileExhibitionV5Contract) Call(wallet *ethereum.Wallet, method, fu
 			return nil, err
 		}
 		return tx, nil
+	case "startSale":
+		return contract.StartSale(t)
 	default:
 		return nil, fmt.Errorf("unsupported method")
 	}
