@@ -244,6 +244,14 @@ func (c *FeralfileExhibitionV5Contract) Call(wallet *ethereum.Wallet, method, fu
 		return tx, nil
 	case "startSale":
 		return contract.StartSale(t)
+	case "setVault":
+		var params struct {
+			Vault common.Address `json:"vault"`
+		}
+		if err := json.Unmarshal(arguments, &params); err != nil {
+			return nil, err
+		}
+		return contract.SetVault(t, params.Vault)
 	default:
 		return nil, fmt.Errorf("unsupported method")
 	}
