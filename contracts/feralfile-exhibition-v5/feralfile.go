@@ -153,16 +153,16 @@ func (c *FeralfileExhibitionV5Contract) Call(wallet *ethereum.Wallet, method, fu
 			SaleData struct {
 				Price         ethereum.BigInt   `json:"price"`
 				Cost          ethereum.BigInt   `json:"cost"`
-				ExpiryTime    ethereum.BigInt   `json:"expiry_time"`
+				ExpiryTime    ethereum.BigInt   `json:"expiryTime"`
 				Destination   common.Address    `json:"destination"`
-				TokenIds      []ethereum.BigInt `json:"token_ids"`
+				TokenIds      []ethereum.BigInt `json:"tokenIds"`
 				RevenueShares [][]struct {
 					Recipient common.Address  `json:"recipient"`
 					Bps       ethereum.BigInt `json:"bps"`
-				} `json:"revenue_shares"`
-				PayByVaultContract bool            `json:"pay_by_vault_contract"`
-				BiddingUnix        ethereum.BigInt `json:"bidding_unix"`
-			} `json:"sale_data"`
+				} `json:"revenueShares"`
+				PayByVaultContract bool            `json:"payByVaultContract"`
+				BiddingUnix        ethereum.BigInt `json:"biddingUnix"`
+			} `json:"saleData"`
 			R string `json:"r"`
 			S string `json:"s"`
 			V string `json:"v"`
