@@ -160,6 +160,7 @@ func (c *FeralfileEnglishAuctionContract) Call(wallet *ethereum.Wallet, method, 
 					Bps       ethereum.BigInt
 				}
 				PayByVaultContract bool
+				BiddingUnix        ethereum.BigInt
 			}
 			R string
 			S string
@@ -196,12 +197,12 @@ func (c *FeralfileEnglishAuctionContract) Call(wallet *ethereum.Wallet, method, 
 			tokenIDs = append(tokenIDs, &tokenID)
 		}
 
-		revenueShares := make([][]IFeralfileSaleDataRevenueShare, 0)
+		revenueShares := make([][]IFeralfileSaleDataV2RevenueShare, 0)
 		for _, v := range params.SaleData.RevenueShares {
-			revenueShare := make([]IFeralfileSaleDataRevenueShare, 0)
+			revenueShare := make([]IFeralfileSaleDataV2RevenueShare, 0)
 			for _, vv := range v {
 				bps := vv.Bps.Int
-				revenueShare = append(revenueShare, IFeralfileSaleDataRevenueShare{
+				revenueShare = append(revenueShare, IFeralfileSaleDataV2RevenueShare{
 					Recipient: vv.Recipient,
 					Bps:       &bps,
 				})
@@ -209,7 +210,7 @@ func (c *FeralfileEnglishAuctionContract) Call(wallet *ethereum.Wallet, method, 
 			revenueShares = append(revenueShares, revenueShare)
 		}
 
-		saleData := IFeralfileSaleDataSaleData{
+		saleData := IFeralfileSaleDataV2SaleData{
 			Price:              &params.SaleData.Price.Int,
 			Cost:               &params.SaleData.Cost.Int,
 			ExpiryTime:         &params.SaleData.ExpiryTime.Int,
@@ -217,6 +218,7 @@ func (c *FeralfileEnglishAuctionContract) Call(wallet *ethereum.Wallet, method, 
 			TokenIds:           tokenIDs,
 			RevenueShares:      revenueShares,
 			PayByVaultContract: params.SaleData.PayByVaultContract,
+			BiddingUnix:        &params.SaleData.BiddingUnix.Int,
 		}
 
 		tx, err := contract.SettleAuction(t, &params.AuctionID.Int, params.ContractAddress, params.VaultAddress, saleData, r32Val, s32Val, uint8(vVal))
