@@ -65,6 +65,8 @@ github.com/beorn7/perks v1.0.0/go.mod h1:KWe93zE9D1o94FZ5RNwFwVgaQK1VOXiVxmqh+Ce
 github.com/beorn7/perks v1.0.1 h1:VlbKKnNfV8bJzeqoa4cOKqO6bYr3WgKZxO8Z16+hsOM=
 github.com/bitmark-inc/feralfile-exhibition-smart-contract/go-binding v0.0.0-20240123035223-4b68ed073580 h1:rPLRM6rVOczvKy9IKCjythrI01sK3oNXRq1i7+S0HfI=
 github.com/bitmark-inc/feralfile-exhibition-smart-contract/go-binding v0.0.0-20240123035223-4b68ed073580/go.mod h1:shvtsuJyQJnByXKqf9n/jpjL4++FSJCFjXR/08iBnFY=
+github.com/bitmark-inc/feralfile-exhibition-smart-contract/go-binding v0.0.0-20240228091230-b288bbbeb0f5 h1:SCN0YyJ86KaT5jjTdySqNuUoc1N66rXy1NHzTeWGd/Q=
+github.com/bitmark-inc/feralfile-exhibition-smart-contract/go-binding v0.0.0-20240228091230-b288bbbeb0f5/go.mod h1:shvtsuJyQJnByXKqf9n/jpjL4++FSJCFjXR/08iBnFY=
 github.com/bits-and-blooms/bitset v1.10.0 h1:ePXTeiPEazB5+opbv5fr8umg2R/1NlzgDsyepwsSr88=
 github.com/bits-and-blooms/bitset v1.10.0/go.mod h1:7hO7Gc7Pp1vODcmWvKMRA9BNmbv6a/7QIWpPxHddWR8=
 github.com/bmizerany/pat v0.0.0-20170815010413-6226ea591a40/go.mod h1:8rLXio+WjiTceGBHIoTvn60HIbs7Hm7bcHjyrSqYB9c=
