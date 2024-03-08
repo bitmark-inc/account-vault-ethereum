@@ -4,11 +4,9 @@ import (
 	"encoding/json"
 	"fmt"
 	"math/big"
-	"strings"
 
 	ethereum "github.com/bitmark-inc/account-vault-ethereum"
 	airdropv1 "github.com/bitmark-inc/feralfile-exhibition-smart-contract/go-binding/feralfile-airdrop-v1"
-	"github.com/ethereum/go-ethereum/accounts/abi"
 	"github.com/ethereum/go-ethereum/common"
 	"github.com/ethereum/go-ethereum/core/types"
 	"github.com/ethereum/go-ethereum/params"
@@ -139,7 +137,7 @@ func (c *FeralFileAirdropV1Contract) Call(
 func (c *FeralFileAirdropV1Contract) Pack(
 	method string,
 	arguments json.RawMessage) ([]byte, error) {
-	parsedABI, err := abi.JSON(strings.NewReader(airdropv1.FeralFileAirdropV1ABI))
+	abi, err := airdropv1.FeralFileAirdropV1MetaData.GetAbi()
 	if nil != err {
 		return nil, err
 	}
@@ -149,7 +147,7 @@ func (c *FeralFileAirdropV1Contract) Pack(
 		return nil, err
 	}
 
-	return parsedABI.Pack(method, parsedArgs...)
+	return abi.Pack(method, parsedArgs...)
 }
 
 func (c *FeralFileAirdropV1Contract) Parse(

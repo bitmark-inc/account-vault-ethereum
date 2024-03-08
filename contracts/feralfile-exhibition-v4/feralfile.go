@@ -9,7 +9,6 @@ import (
 	"strconv"
 	"strings"
 
-	"github.com/ethereum/go-ethereum/accounts/abi"
 	"github.com/ethereum/go-ethereum/common"
 	"github.com/ethereum/go-ethereum/core/types"
 	"github.com/ethereum/go-ethereum/params"
@@ -210,7 +209,7 @@ func (c *FeralfileExhibitionV4Contract) Call(
 func (c *FeralfileExhibitionV4Contract) Pack(
 	method string,
 	arguments json.RawMessage) ([]byte, error) {
-	parsedABI, err := abi.JSON(strings.NewReader(feralfilev4.FeralfileExhibitionV4ABI))
+	abi, err := feralfilev4.FeralfileExhibitionV4MetaData.GetAbi()
 	if nil != err {
 		return nil, err
 	}
@@ -220,7 +219,7 @@ func (c *FeralfileExhibitionV4Contract) Pack(
 		return nil, err
 	}
 
-	return parsedABI.Pack(method, parsedArgs...)
+	return abi.Pack(method, parsedArgs...)
 }
 
 func (c *FeralfileExhibitionV4Contract) Parse(
