@@ -67,6 +67,14 @@ github.com/bitmark-inc/feralfile-exhibition-smart-contract/go-binding v0.0.0-202
 github.com/bitmark-inc/feralfile-exhibition-smart-contract/go-binding v0.0.0-20240123035223-4b68ed073580/go.mod h1:shvtsuJyQJnByXKqf9n/jpjL4++FSJCFjXR/08iBnFY=
 github.com/bitmark-inc/feralfile-exhibition-smart-contract/go-binding v0.0.0-20240228091230-b288bbbeb0f5 h1:SCN0YyJ86KaT5jjTdySqNuUoc1N66rXy1NHzTeWGd/Q=
 github.com/bitmark-inc/feralfile-exhibition-smart-contract/go-binding v0.0.0-20240228091230-b288bbbeb0f5/go.mod h1:shvtsuJyQJnByXKqf9n/jpjL4++FSJCFjXR/08iBnFY=
+github.com/bitmark-inc/feralfile-exhibition-smart-contract/go-binding v0.0.0-20240308040748-0dcbab011134 h1:VzZK6KQvK3rhusbVQ99RXM0TNnQzHml5YSHQtTNghvk=
+github.com/bitmark-inc/feralfile-exhibition-smart-contract/go-binding v0.0.0-20240308040748-0dcbab011134/go.mod h1:shvtsuJyQJnByXKqf9n/jpjL4++FSJCFjXR/08iBnFY=
+github.com/bitmark-inc/feralfile-exhibition-smart-contract/go-binding v0.0.0-20240311044307-3dba2ebf9952 h1:fg3cHLGELhGADtbeMOGD8C2m0wFT5jmK7BmgNX4j7ck=
+github.com/bitmark-inc/feralfile-exhibition-smart-contract/go-binding v0.0.0-20240311044307-3dba2ebf9952/go.mod h1:shvtsuJyQJnByXKqf9n/jpjL4++FSJCFjXR/08iBnFY=
+github.com/bitmark-inc/feralfile-exhibition-smart-contract/go-binding v0.0.0-20240311073813-229b5b080e86 h1:yTXq2huNynN1kaD0tnmwBisjom/czb0ZQeM0+6JPbag=
+github.com/bitmark-inc/feralfile-exhibition-smart-contract/go-binding v0.0.0-20240311073813-229b5b080e86/go.mod h1:shvtsuJyQJnByXKqf9n/jpjL4++FSJCFjXR/08iBnFY=
+github.com/bitmark-inc/feralfile-exhibition-smart-contract/go-binding v0.0.0-20240311081428-598312207d88 h1:fbVH4R51pSU+dvejjeHz6Ks6VfcQelVlQDVS412+Gak=
+github.com/bitmark-inc/feralfile-exhibition-smart-contract/go-binding v0.0.0-20240311081428-598312207d88/go.mod h1:shvtsuJyQJnByXKqf9n/jpjL4++FSJCFjXR/08iBnFY=
 github.com/bits-and-blooms/bitset v1.10.0 h1:ePXTeiPEazB5+opbv5fr8umg2R/1NlzgDsyepwsSr88=
 github.com/bits-and-blooms/bitset v1.10.0/go.mod h1:7hO7Gc7Pp1vODcmWvKMRA9BNmbv6a/7QIWpPxHddWR8=
 github.com/bmizerany/pat v0.0.0-20170815010413-6226ea591a40/go.mod h1:8rLXio+WjiTceGBHIoTvn60HIbs7Hm7bcHjyrSqYB9c=
