@@ -14,6 +14,7 @@ import (
 	"github.com/ethereum/go-ethereum/params"
 
 	ethereum "github.com/bitmark-inc/account-vault-ethereum"
+	feralfilev3 "github.com/bitmark-inc/feralfile-exhibition-smart-contract/go-binding/feralfile-exhibition-v3"
 )
 
 const (
@@ -34,7 +35,9 @@ func FeralfileExhibitionV3ContractFactory(contractAddress string) ethereum.Contr
 }
 
 // Deploy deploys the smart contract to ethereum blockchain
-func (c *FeralfileExhibitionV3Contract) Deploy(wallet *ethereum.Wallet, arguments json.RawMessage) (string, string, error) {
+func (c *FeralfileExhibitionV3Contract) Deploy(
+	wallet *ethereum.Wallet,
+	arguments json.RawMessage) (string, string, error) {
 	var params struct {
 		Name                 string          `json:"name"`
 		Symbol               string          `json:"symbol"`
@@ -56,7 +59,7 @@ func (c *FeralfileExhibitionV3Contract) Deploy(wallet *ethereum.Wallet, argument
 		return "", "", err
 	}
 
-	address, tx, _, err := DeployFeralfileExhibitionV3(t, wallet.RPCClient(),
+	address, tx, _, err := feralfilev3.DeployFeralfileExhibitionV3(t, wallet.RPCClient(),
 		params.Name, params.Symbol, &params.RoyaltyBPS.Int, params.RoyaltyPayoutAddress,
 		params.ContractURI, params.TokenBaseURI, params.IsBurnable, params.IsBridgeable)
 	if err != nil {
@@ -66,8 +69,15 @@ func (c *FeralfileExhibitionV3Contract) Deploy(wallet *ethereum.Wallet, argument
 }
 
 // Call is the entry function for account vault to interact with a smart contract.
-func (c *FeralfileExhibitionV3Contract) Call(wallet *ethereum.Wallet, method, fund string, arguments json.RawMessage, noSend bool, customizeGasPriceInWei *int64, customizedNonce *uint64) (*types.Transaction, error) {
-	contract, err := NewFeralfileExhibitionV3(common.HexToAddress(c.contractAddress), wallet.RPCClient())
+func (c *FeralfileExhibitionV3Contract) Call(
+	wallet *ethereum.Wallet,
+	method,
+	fund string,
+	arguments json.RawMessage,
+	noSend bool,
+	customizeGasPriceInWei *int64,
+	customizedNonce *uint64) (*types.Transaction, error) {
+	contract, err := feralfilev3.NewFeralfileExhibitionV3(common.HexToAddress(c.contractAddress), wallet.RPCClient())
 	if err != nil {
 		return nil, err
 	}
@@ -86,6 +96,118 @@ func (c *FeralfileExhibitionV3Contract) Call(wallet *ethereum.Wallet, method, fu
 		t.Nonce = big.NewInt(int64(*customizedNonce))
 	}
 
+	params, err := c.Parse(method, arguments)
+	if nil != err {
+		return nil, err
+	}
+
+	switch method {
+	case "register_artworks":
+		if len(params) != 1 {
+			return nil, fmt.Errorf("invalid params")
+		}
+
+		artworkParams, ok := params[0].([]feralfilev3.FeralfileExhibitionV3Artwork)
+		if !ok {
+			return nil, fmt.Errorf("invalid artwork params")
+		}
+
+		return contract.CreateArtworks(t, artworkParams)
+	case "mint_editions":
+		if len(params) != 1 {
+			return nil, fmt.Errorf("invalid params")
+		}
+
+		mintParams, ok := params[0].([]feralfilev3.FeralfileExhibitionV3MintArtworkParam)
+		if !ok {
+			return nil, fmt.Errorf("invalid mint params")
+		}
+
+		t.GasLimit = uint64(GasLimitPerMint * len(mintParams))
+
+		return contract.BatchMint(t, mintParams)
+	case "authorized_transfer":
+		if len(params) != 1 {
+			return nil, fmt.Errorf("invalid params")
+		}
+
+		transferParams, ok := params[0].([]feralfilev3.FeralfileExhibitionV3TransferArtworkParam)
+		if !ok {
+			return nil, fmt.Errorf("invalid transfer params")
+		}
+
+		t.GasLimit = uint64(GasLimitPerAuthTransfer * len(transferParams))
+
+		return contract.AuthorizedTransfer(t, transferParams)
+	case "burn_editions":
+		if len(params) != 1 {
+			return nil, errors.New("Invalid parameters")
+		}
+
+		burnParams, ok := params[0].([]*big.Int)
+		if !ok {
+			return nil, errors.New("Invalid token burn parameters")
+		}
+
+		return contract.BurnEditions(t, burnParams)
+	case "transfer":
+		if len(params) != 2 {
+			return nil, fmt.Errorf("invalid params")
+		}
+
+		to, ok := params[0].(common.Address)
+		if !ok {
+			return nil, fmt.Errorf("invalid to params")
+		}
+
+		tokenID, ok := params[1].(big.Int)
+		if !ok {
+			return nil, fmt.Errorf("invalid token id params")
+		}
+
+		t.GasLimit = GasLimitTransfer
+
+		return contract.SafeTransferFrom(t,
+			common.HexToAddress(wallet.Account()),
+			to,
+			&tokenID)
+	case "approve_for_all":
+		if len(params) != 1 {
+			return nil, fmt.Errorf("invalid params")
+		}
+
+		operator, ok := params[0].(common.Address)
+		if !ok {
+			return nil, fmt.Errorf("invalid operator params")
+		}
+
+		t.GasLimit = GasLimitApproveForAll
+
+		return contract.SetApprovalForAll(t, operator, true)
+	default:
+		return nil, fmt.Errorf("unsupported method")
+	}
+}
+
+func (c *FeralfileExhibitionV3Contract) Pack(
+	method string,
+	arguments json.RawMessage) ([]byte, error) {
+	abi, err := feralfilev3.FeralfileExhibitionV3MetaData.GetAbi()
+	if nil != err {
+		return nil, err
+	}
+
+	parsedArgs, err := c.Parse(method, arguments)
+	if nil != err {
+		return nil, err
+	}
+
+	return abi.Pack(method, parsedArgs...)
+}
+
+func (c *FeralfileExhibitionV3Contract) Parse(
+	method string,
+	arguments json.RawMessage) ([]interface{}, error) {
 	switch method {
 	case "register_artworks":
 		var params []struct {
@@ -101,10 +223,9 @@ func (c *FeralfileExhibitionV3Contract) Call(wallet *ethereum.Wallet, method, fu
 			return nil, err
 		}
 
-		artworkParams := make([]FeralfileExhibitionV3Artwork, 0)
-
+		artworkParams := make([]feralfilev3.FeralfileExhibitionV3Artwork, 0)
 		for _, v := range params {
-			artworkParams = append(artworkParams, FeralfileExhibitionV3Artwork{
+			artworkParams = append(artworkParams, feralfilev3.FeralfileExhibitionV3Artwork{
 				Title:       v.Title,
 				ArtistName:  v.ArtistName,
 				Fingerprint: v.Fingerprint,
@@ -114,11 +235,7 @@ func (c *FeralfileExhibitionV3Contract) Call(wallet *ethereum.Wallet, method, fu
 			})
 		}
 
-		tx, err := contract.CreateArtworks(t, artworkParams)
-		if err != nil {
-			return nil, err
-		}
-		return tx, err
+		return []interface{}{artworkParams}, nil
 	case "mint_editions":
 		var params []struct {
 			ArtworkID     ethereum.BigInt `json:"artwork_id"`
@@ -132,15 +249,13 @@ func (c *FeralfileExhibitionV3Contract) Call(wallet *ethereum.Wallet, method, fu
 			return nil, err
 		}
 
-		t.GasLimit = uint64(GasLimitPerMint * len(params))
-
-		mintParams := make([]FeralfileExhibitionV3MintArtworkParam, 0)
+		mintParams := make([]feralfilev3.FeralfileExhibitionV3MintArtworkParam, 0)
 
 		for _, v := range params {
 			artworkID := v.ArtworkID.Int
 			editionNumber := v.EditionNumber.Int
 
-			mintParams = append(mintParams, FeralfileExhibitionV3MintArtworkParam{
+			mintParams = append(mintParams, feralfilev3.FeralfileExhibitionV3MintArtworkParam{
 				ArtworkID: &artworkID,
 				Edition:   &editionNumber,
 				Artist:    v.Artist,
@@ -149,11 +264,7 @@ func (c *FeralfileExhibitionV3Contract) Call(wallet *ethereum.Wallet, method, fu
 			})
 		}
 
-		tx, err := contract.BatchMint(t, mintParams)
-		if err != nil {
-			return nil, err
-		}
-		return tx, nil
+		return []interface{}{mintParams}, nil
 	case "authorized_transfer":
 		var params []struct {
 			From      common.Address  `json:"from"`
@@ -169,9 +280,7 @@ func (c *FeralfileExhibitionV3Contract) Call(wallet *ethereum.Wallet, method, fu
 			return nil, err
 		}
 
-		t.GasLimit = uint64(GasLimitPerAuthTransfer * len(params))
-
-		transferParams := make([]FeralfileExhibitionV3TransferArtworkParam, 0)
+		transferParams := make([]feralfilev3.FeralfileExhibitionV3TransferArtworkParam, 0)
 
 		for _, v := range params {
 			tokenID := v.TokenID.Int
@@ -196,7 +305,7 @@ func (c *FeralfileExhibitionV3Contract) Call(wallet *ethereum.Wallet, method, fu
 			copy(r32Val[:], rVal)
 			copy(s32Val[:], sVal)
 
-			transferParams = append(transferParams, FeralfileExhibitionV3TransferArtworkParam{
+			transferParams = append(transferParams, feralfilev3.FeralfileExhibitionV3TransferArtworkParam{
 				From:       v.From,
 				To:         v.To,
 				TokenID:    &tokenID,
@@ -207,14 +316,9 @@ func (c *FeralfileExhibitionV3Contract) Call(wallet *ethereum.Wallet, method, fu
 			})
 		}
 
-		tx, err := contract.AuthorizedTransfer(t, transferParams)
-		if err != nil {
-			return nil, err
-		}
-		return tx, nil
+		return []interface{}{transferParams}, nil
 	case "burn_editions":
 		var params []ethereum.BigInt
-
 		if err := json.Unmarshal(arguments, &params); err != nil {
 			return nil, err
 		}
@@ -225,11 +329,7 @@ func (c *FeralfileExhibitionV3Contract) Call(wallet *ethereum.Wallet, method, fu
 			burnParams = append(burnParams, &tokenID)
 		}
 
-		tx, err := contract.BurnEditions(t, burnParams)
-		if err != nil {
-			return nil, err
-		}
-		return tx, nil
+		return []interface{}{burnParams}, nil
 	case "transfer":
 		var params struct {
 			To      common.Address  `json:"to"`
@@ -239,14 +339,7 @@ func (c *FeralfileExhibitionV3Contract) Call(wallet *ethereum.Wallet, method, fu
 			return nil, err
 		}
 
-		t.GasLimit = GasLimitTransfer
-
-		tx, err := contract.SafeTransferFrom(t,
-			common.HexToAddress(wallet.Account()), params.To, &params.TokenID.Int)
-		if err != nil {
-			return nil, err
-		}
-		return tx, nil
+		return []interface{}{params.To, params.TokenID.Int}, nil
 	case "approve_for_all":
 		var params struct {
 			Operator common.Address `json:"operator"`
@@ -255,20 +348,10 @@ func (c *FeralfileExhibitionV3Contract) Call(wallet *ethereum.Wallet, method, fu
 			return nil, err
 		}
 
-		t.GasLimit = GasLimitApproveForAll
-
-		tx, err := contract.SetApprovalForAll(t, params.Operator, true)
-		if err != nil {
-			return nil, err
-		}
-		return tx, nil
+		return []interface{}{params.Operator}, nil
 	default:
 		return nil, fmt.Errorf("unsupported method")
 	}
-}
-
-func (c *FeralfileExhibitionV3Contract) ParamEncoder(method string, arguments json.RawMessage) ([]byte, error) {
-	return nil, fmt.Errorf("unsupported contract version")
 }
 
 func init() {
