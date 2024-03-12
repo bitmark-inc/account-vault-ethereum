@@ -226,6 +226,8 @@ func (c *FeralfileExhibitionV4Contract) Parse(
 	method string,
 	arguments json.RawMessage) ([]interface{}, error) {
 	switch method {
+	case "startSale":
+		return nil, nil
 	case "burnArtworks":
 		var params []ethereum.BigInt
 		if err := json.Unmarshal(arguments, &params); err != nil {
