@@ -177,7 +177,7 @@ func (c *FeralfileExhibitionV2Contract) Call(
 			return nil, fmt.Errorf("invalid to params")
 		}
 
-		tokenID, ok := params[1].(big.Int)
+		tokenID, ok := params[1].(*big.Int)
 		if !ok {
 			return nil, fmt.Errorf("invalid token id params")
 		}
@@ -188,7 +188,7 @@ func (c *FeralfileExhibitionV2Contract) Call(
 			t,
 			common.HexToAddress(wallet.Account()),
 			to,
-			&tokenID)
+			tokenID)
 	case "approve_for_all":
 		if len(params) != 1 {
 			return nil, fmt.Errorf("invalid params")
