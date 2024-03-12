@@ -1,0 +1,40 @@
+name: Testing Go Modules
+
+on:
+  workflow_dispatch:
+  pull_request:
+    branches:
+      - main
+      - develop
+    paths:
+      - "**.go"
+  push:
+    branches:
+      - main
+      - develop
+    paths:
+      - "**.go"
+
+jobs:
+  testing-job:
+    runs-on: self-hosted
+
+    steps:
+      - name: "setup go compiler"
+        uses: actions/setup-go@v4
+        with:
+          go-version: "1.20.x"
+
+      - name: "checkout code"
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+          submodules: recursive
+
+      - name: "vet the go modules"
+        run: |
+          go vet ./...
+
+      - name: "test"
+        run: |
+          go test -v -cover -timeout 60s ./...
