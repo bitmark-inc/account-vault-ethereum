@@ -98,24 +98,24 @@ func (c *FeralFileAirdropV1Contract) Call(
 			return nil, fmt.Errorf("invalid parameters")
 		}
 
-		tokenID, ok := params[0].(big.Int)
+		tokenID, ok := params[0].(*big.Int)
 		if !ok {
 			return nil, fmt.Errorf("invalid token id")
 		}
 
-		amount, ok := params[1].(big.Int)
+		amount, ok := params[1].(*big.Int)
 		if !ok {
 			return nil, fmt.Errorf("invalid amount")
 		}
 
 		t.GasLimit = 100000
-		return contract.Mint(t, &tokenID, &amount)
+		return contract.Mint(t, tokenID, amount)
 	case "airdrop":
 		if len(params) != 2 {
 			return nil, fmt.Errorf("invalid parameters")
 		}
 
-		tokenID, ok := params[0].(big.Int)
+		tokenID, ok := params[0].(*big.Int)
 		if !ok {
 			return nil, fmt.Errorf("invalid token id")
 		}
@@ -128,7 +128,7 @@ func (c *FeralFileAirdropV1Contract) Call(
 		const gasLimitPerItem = 150000
 		t.GasLimit = uint64(gasLimitPerItem * len(to))
 
-		return contract.Airdrop(t, &tokenID, to)
+		return contract.Airdrop(t, tokenID, to)
 	}
 
 	return nil, fmt.Errorf("unsupported method")
@@ -164,7 +164,7 @@ func (c *FeralFileAirdropV1Contract) Parse(
 			return nil, err
 		}
 
-		return []interface{}{params.TokenID.Int, params.Amount.Int}, nil
+		return []interface{}{&params.TokenID.Int, &params.Amount.Int}, nil
 	case "airdrop":
 		var params struct {
 			TokenID *ethereum.BigInt `json:"token_id"`
@@ -178,7 +178,7 @@ func (c *FeralFileAirdropV1Contract) Parse(
 			return nil, fmt.Errorf("invalid token airdrop parameters (to)")
 		}
 
-		return []interface{}{params.TokenID.Int, params.To}, nil
+		return []interface{}{&params.TokenID.Int, params.To}, nil
 	default:
 		return nil, fmt.Errorf("unsupported method")
 	}

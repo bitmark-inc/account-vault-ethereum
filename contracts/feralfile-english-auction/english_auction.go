@@ -100,7 +100,7 @@ func (c *FeralfileEnglishAuctionContract) Call(
 			return nil, fmt.Errorf("invalid params")
 		}
 
-		auctionID, ok := params[0].(big.Int)
+		auctionID, ok := params[0].(*big.Int)
 		if !ok {
 			return nil, fmt.Errorf("invalid auction id")
 		}
@@ -110,12 +110,12 @@ func (c *FeralfileEnglishAuctionContract) Call(
 			return nil, fmt.Errorf("invalid bidder")
 		}
 
-		amount, ok := params[2].(big.Int)
+		amount, ok := params[2].(*big.Int)
 		if !ok {
 			return nil, fmt.Errorf("invalid amount")
 		}
 
-		expiryTime, ok := params[3].(big.Int)
+		expiryTime, ok := params[3].(*big.Int)
 		if !ok {
 			return nil, fmt.Errorf("invalid expiry time")
 		}
@@ -137,10 +137,10 @@ func (c *FeralfileEnglishAuctionContract) Call(
 
 		return contract.PlaceSignedBid(
 			t,
-			&auctionID,
+			auctionID,
 			bidder,
-			&amount,
-			&expiryTime,
+			amount,
+			expiryTime,
 			r32Val,
 			s32Val,
 			vVal)
@@ -149,7 +149,7 @@ func (c *FeralfileEnglishAuctionContract) Call(
 			return nil, fmt.Errorf("invalid params")
 		}
 
-		auctionID, ok := params[0].(big.Int)
+		auctionID, ok := params[0].(*big.Int)
 		if !ok {
 			return nil, fmt.Errorf("invalid auction id")
 		}
@@ -186,7 +186,7 @@ func (c *FeralfileEnglishAuctionContract) Call(
 
 		tx, err := contract.SettleAuction(
 			t,
-			&auctionID,
+			auctionID,
 			contractAddress,
 			vaultAddress,
 			saleData,
@@ -293,10 +293,10 @@ func (c *FeralfileEnglishAuctionContract) Parse(
 		copy(s32Val[:], sVal)
 
 		return []interface{}{
-				params.AuctionID.Int,
+				&params.AuctionID.Int,
 				params.Bidder,
-				params.Amount.Int,
-				params.ExpiryTime.Int,
+				&params.Amount.Int,
+				&params.ExpiryTime.Int,
 				r32Val,
 				s32Val,
 				uint8(vVal)},
@@ -377,7 +377,7 @@ func (c *FeralfileEnglishAuctionContract) Parse(
 		}
 
 		return []interface{}{
-				params.AuctionID.Int,
+				&params.AuctionID.Int,
 				params.ContractAddress,
 				params.VaultAddress,
 				saleData,

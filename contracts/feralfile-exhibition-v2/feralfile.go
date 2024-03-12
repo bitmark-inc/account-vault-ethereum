@@ -133,17 +133,17 @@ func (c *FeralfileExhibitionV2Contract) Call(
 			return nil, fmt.Errorf("invalid params")
 		}
 
-		artworkID, ok := params[0].(big.Int)
+		artworkID, ok := params[0].(*big.Int)
 		if !ok {
 			return nil, fmt.Errorf("invalid artwork id params")
 		}
 
-		bitmarkID, ok := params[1].(big.Int)
+		bitmarkID, ok := params[1].(*big.Int)
 		if !ok {
 			return nil, fmt.Errorf("invalid bitmark id params")
 		}
 
-		editionNumber, ok := params[2].(big.Int)
+		editionNumber, ok := params[2].(*big.Int)
 		if !ok {
 			return nil, fmt.Errorf("invalid edition number params")
 		}
@@ -162,9 +162,9 @@ func (c *FeralfileExhibitionV2Contract) Call(
 
 		return contract.SwapArtworkFromBitmark(
 			t,
-			&artworkID,
-			&bitmarkID,
-			&editionNumber,
+			artworkID,
+			bitmarkID,
+			editionNumber,
 			to,
 			ipfsCID)
 	case "transfer":
@@ -259,9 +259,9 @@ func (c *FeralfileExhibitionV2Contract) Parse(
 		}
 
 		return []interface{}{
-			params.ArtworkID.Int,
-			params.BitmarkID.Int,
-			params.EditionNumber.Int,
+			&params.ArtworkID.Int,
+			&params.BitmarkID.Int,
+			&params.EditionNumber.Int,
 			params.To, params.IPFSCID}, nil
 	case "transfer":
 		var params struct {
@@ -272,7 +272,7 @@ func (c *FeralfileExhibitionV2Contract) Parse(
 			return nil, err
 		}
 
-		return []interface{}{params.To, params.TokenID.Int}, nil
+		return []interface{}{params.To, &params.TokenID.Int}, nil
 
 	case "approve_for_all":
 		var params struct {

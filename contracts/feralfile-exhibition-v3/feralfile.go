@@ -160,7 +160,7 @@ func (c *FeralfileExhibitionV3Contract) Call(
 			return nil, fmt.Errorf("invalid to params")
 		}
 
-		tokenID, ok := params[1].(big.Int)
+		tokenID, ok := params[1].(*big.Int)
 		if !ok {
 			return nil, fmt.Errorf("invalid token id params")
 		}
@@ -170,7 +170,7 @@ func (c *FeralfileExhibitionV3Contract) Call(
 		return contract.SafeTransferFrom(t,
 			common.HexToAddress(wallet.Account()),
 			to,
-			&tokenID)
+			tokenID)
 	case "approve_for_all":
 		if len(params) != 1 {
 			return nil, fmt.Errorf("invalid params")
@@ -339,7 +339,7 @@ func (c *FeralfileExhibitionV3Contract) Parse(
 			return nil, err
 		}
 
-		return []interface{}{params.To, params.TokenID.Int}, nil
+		return []interface{}{params.To, &params.TokenID.Int}, nil
 	case "approve_for_all":
 		var params struct {
 			Operator common.Address `json:"operator"`
