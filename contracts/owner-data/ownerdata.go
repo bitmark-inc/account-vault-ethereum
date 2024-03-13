@@ -159,11 +159,11 @@ func (c *OwnerDataContract) Parse(
 
 		data := ownerdata.OwnerDataData{
 			Owner:    common.HexToAddress(params.Data.Owner),
-			DataHash: common.Hex2Bytes(params.Data.DataHash),
+			DataHash: []byte(params.Data.DataHash),
 			Metadata: params.Data.Metadata,
 		}
 		signature := ownerdata.OwnerDataSignature{
-			OwnerSign:   common.Hex2Bytes(params.Signature.OwnerSignature),
+			OwnerSign:   common.Hex2Bytes(strings.Replace(params.Signature.OwnerSignature, "0x", "", -1)),
 			ExpiryBlock: &params.Signature.ExpiryBlock.Int,
 			R:           r32Val,
 			S:           s32Val,
