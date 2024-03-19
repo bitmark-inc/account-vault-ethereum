@@ -4,6 +4,7 @@ import (
 	"encoding/json"
 	"fmt"
 
+	"github.com/ethereum/go-ethereum/common"
 	"github.com/ethereum/go-ethereum/core/types"
 )
 
@@ -27,14 +28,23 @@ type Contract interface {
 	// Pack packs the method and arguments into a byte array representing
 	// the smart contract call data
 	Pack(
+		wallet *Wallet,
 		method string,
 		arguments json.RawMessage) ([]byte, error)
 
 	// Parse parses the arguments as JSON format into an array of smart
 	// contract function call arguments
 	Parse(
+		wallet *Wallet,
 		method string,
 		arguments json.RawMessage) ([]interface{}, error)
+
+	// EstimateGasLimit estimates the gas limit for a smart contract method call
+	EstimateGasLimit(
+		wallet *Wallet,
+		contractAddr common.Address,
+		method string,
+		arguments json.RawMessage) (uint64, error)
 }
 
 // ContractFactory is a function that takes an address and return a Contract instance

@@ -52,7 +52,7 @@ func (c *OwnerDataContract) Call(wallet *ethereum.Wallet, method, fund string, a
 		t.Nonce = big.NewInt(int64(*customizedNonce))
 	}
 
-	params, err := c.Parse(method, arguments)
+	params, err := c.Parse(wallet, method, arguments)
 	if nil != err {
 		return nil, err
 	}
@@ -95,6 +95,7 @@ func (c *OwnerDataContract) Call(wallet *ethereum.Wallet, method, fund string, a
 }
 
 func (c *OwnerDataContract) Pack(
+	wallet *ethereum.Wallet,
 	method string,
 	arguments json.RawMessage) ([]byte, error) {
 	abi, err := ownerdata.OwnerDataMetaData.GetAbi()
@@ -102,7 +103,7 @@ func (c *OwnerDataContract) Pack(
 		return nil, err
 	}
 
-	parsedArgs, err := c.Parse(method, arguments)
+	parsedArgs, err := c.Parse(wallet, method, arguments)
 	if nil != err {
 		return nil, err
 	}
@@ -111,6 +112,7 @@ func (c *OwnerDataContract) Pack(
 }
 
 func (c *OwnerDataContract) Parse(
+	wallet *ethereum.Wallet,
 	method string,
 	arguments json.RawMessage) ([]interface{}, error) {
 	switch method {
@@ -177,6 +179,14 @@ func (c *OwnerDataContract) Parse(
 	default:
 		return nil, fmt.Errorf("unsupported method")
 	}
+}
+
+func (c *OwnerDataContract) EstimateGasLimit(
+	wallet *ethereum.Wallet,
+	contractAddr common.Address,
+	method string,
+	arguments json.RawMessage) (uint64, error) {
+	return 0, errors.New("not implemented")
 }
 
 func init() {

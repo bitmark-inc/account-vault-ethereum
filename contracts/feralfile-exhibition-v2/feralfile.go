@@ -1,22 +1,18 @@
 package feralfilev2
 
 import (
+	"context"
 	"encoding/json"
 	"fmt"
 	"math/big"
 
+	goEthereum "github.com/ethereum/go-ethereum"
 	"github.com/ethereum/go-ethereum/common"
 	"github.com/ethereum/go-ethereum/core/types"
 	"github.com/ethereum/go-ethereum/params"
 
 	ethereum "github.com/bitmark-inc/account-vault-ethereum"
 	feralfilev2 "github.com/bitmark-inc/feralfile-exhibition-smart-contract/go-binding/feralfile-exhibition-v2"
-)
-
-const (
-	GasLimitSwapArtworkFromBitmark = 400000
-	GasLimitTransfer               = 120000
-	GasLimitApproveForAll          = 60000
 )
 
 type FeralfileExhibitionV2Contract struct {
@@ -72,7 +68,8 @@ func (c *FeralfileExhibitionV2Contract) Call(
 	noSend bool,
 	customizeGasPriceInWei *int64,
 	customizedNonce *uint64) (*types.Transaction, error) {
-	contract, err := feralfilev2.NewFeralfileExhibitionV2(common.HexToAddress(c.contractAddress), wallet.RPCClient())
+	contractAddr := common.HexToAddress(c.contractAddress)
+	contract, err := feralfilev2.NewFeralfileExhibitionV2(contractAddr, wallet.RPCClient())
 	if err != nil {
 		return nil, err
 	}
@@ -91,7 +88,7 @@ func (c *FeralfileExhibitionV2Contract) Call(
 		t.Nonce = big.NewInt(int64(*customizedNonce))
 	}
 
-	params, err := c.Parse(method, arguments)
+	params, err := c.Parse(wallet, method, arguments)
 	if nil != err {
 		return nil, err
 	}
@@ -158,7 +155,12 @@ func (c *FeralfileExhibitionV2Contract) Call(
 			return nil, fmt.Errorf("invalid ipfs cid params")
 		}
 
-		t.GasLimit = GasLimitSwapArtworkFromBitmark
+		gasLimit, err := c.EstimateGasLimit(wallet, contractAddr, method, arguments)
+		if nil != err {
+			return nil, err
+		}
+
+		t.GasLimit = gasLimit
 
 		return contract.SwapArtworkFromBitmark(
 			t,
@@ -182,7 +184,12 @@ func (c *FeralfileExhibitionV2Contract) Call(
 			return nil, fmt.Errorf("invalid token id params")
 		}
 
-		t.GasLimit = GasLimitTransfer
+		gasLimit, err := c.EstimateGasLimit(wallet, contractAddr, method, arguments)
+		if nil != err {
+			return nil, err
+		}
+
+		t.GasLimit = gasLimit
 
 		return contract.SafeTransferFrom(
 			t,
@@ -199,7 +206,12 @@ func (c *FeralfileExhibitionV2Contract) Call(
 			return nil, fmt.Errorf("invalid operator params")
 		}
 
-		t.GasLimit = GasLimitApproveForAll
+		gasLimit, err := c.EstimateGasLimit(wallet, contractAddr, method, arguments)
+		if nil != err {
+			return nil, err
+		}
+
+		t.GasLimit = gasLimit
 
 		return contract.SetApprovalForAll(t, operator, true)
 	default:
@@ -208,6 +220,7 @@ func (c *FeralfileExhibitionV2Contract) Call(
 }
 
 func (c *FeralfileExhibitionV2Contract) Pack(
+	wallet *ethereum.Wallet,
 	method string,
 	arguments json.RawMessage) ([]byte, error) {
 	abi, err := feralfilev2.FeralfileExhibitionV2MetaData.GetAbi()
@@ -215,15 +228,29 @@ func (c *FeralfileExhibitionV2Contract) Pack(
 		return nil, err
 	}
 
-	parsedArgs, err := c.Parse(method, arguments)
+	parsedArgs, err := c.Parse(wallet, method, arguments)
 	if nil != err {
 		return nil, err
+	}
+
+	switch method {
+	case "create_artwork":
+		method = "createArtwork"
+	case "swap_artwork_from_bitmark":
+		method = "swapArtworkFromBitmark"
+	case "transfer":
+		method = "safeTransferFrom"
+	case "approve_for_all":
+		method = "setApprovalForAll"
+	default:
+		return nil, fmt.Errorf("unsupported method")
 	}
 
 	return abi.Pack(method, parsedArgs...)
 }
 
 func (c *FeralfileExhibitionV2Contract) Parse(
+	wallet *ethereum.Wallet,
 	method string,
 	arguments json.RawMessage) ([]interface{}, error) {
 	switch method {
@@ -262,7 +289,8 @@ func (c *FeralfileExhibitionV2Contract) Parse(
 			&params.ArtworkID.Int,
 			&params.BitmarkID.Int,
 			&params.EditionNumber.Int,
-			params.To, params.IPFSCID}, nil
+			params.To,
+			params.IPFSCID}, nil
 	case "transfer":
 		var params struct {
 			To      common.Address  `json:"to"`
@@ -272,7 +300,7 @@ func (c *FeralfileExhibitionV2Contract) Parse(
 			return nil, err
 		}
 
-		return []interface{}{params.To, &params.TokenID.Int}, nil
+		return []interface{}{common.HexToAddress(wallet.Account()), params.To, &params.TokenID.Int}, nil
 
 	case "approve_for_all":
 		var params struct {
@@ -282,10 +310,33 @@ func (c *FeralfileExhibitionV2Contract) Parse(
 			return nil, err
 		}
 
-		return []interface{}{params.Operator}, nil
+		return []interface{}{params.Operator, true}, nil
 	default:
 		return nil, fmt.Errorf("unsupported method")
 	}
+}
+
+func (c *FeralfileExhibitionV2Contract) EstimateGasLimit(
+	wallet *ethereum.Wallet,
+	contractAddr common.Address,
+	method string,
+	arguments json.RawMessage) (uint64, error) {
+	data, err := c.Pack(wallet, method, arguments)
+	if nil != err {
+		return 0, err
+	}
+
+	gas, err := wallet.RPCClient().EstimateGas(context.Background(), goEthereum.CallMsg{
+		From: common.HexToAddress(wallet.Account()),
+		To:   &contractAddr,
+		Data: data,
+	})
+
+	if nil != err {
+		return 0, err
+	}
+
+	return gas * 115 / 100, nil // add 15% buffer
 }
 
 func init() {
