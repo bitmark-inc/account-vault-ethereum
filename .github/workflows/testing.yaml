@@ -17,7 +17,7 @@ on:
 
 jobs:
   testing-job:
-    runs-on: self-hosted
+    runs-on: ubuntu-latest
 
     steps:
       - name: "setup go compiler"
