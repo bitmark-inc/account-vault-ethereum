@@ -32,7 +32,15 @@ func (c *OwnerDataContract) Deploy(wallet *ethereum.Wallet, arguments json.RawMe
 }
 
 // Call is the entry function for account vault to interact with a smart contract.
-func (c *OwnerDataContract) Call(wallet *ethereum.Wallet, method, fund string, arguments json.RawMessage, noSend bool, customizeGasPriceInWei *int64, customizedNonce *uint64) (*types.Transaction, error) {
+func (c *OwnerDataContract) Call(
+	wallet *ethereum.Wallet,
+	method,
+	fund string,
+	arguments json.RawMessage,
+	noSend bool,
+	gasLimit uint64,
+	gasPrice *int64,
+	nonce *uint64) (*types.Transaction, error) {
 	contract, err := ownerdata.NewOwnerData(common.HexToAddress(c.contractAddress), wallet.RPCClient())
 	if err != nil {
 		return nil, err
@@ -44,15 +52,16 @@ func (c *OwnerDataContract) Call(wallet *ethereum.Wallet, method, fund string, a
 	}
 
 	t.NoSend = noSend
-	if customizeGasPriceInWei != nil && *customizeGasPriceInWei != 0 {
-		t.GasPrice = big.NewInt(*customizeGasPriceInWei * params.Wei)
+	t.GasLimit = gasLimit
+	if gasPrice != nil && *gasPrice != 0 {
+		t.GasPrice = big.NewInt(*gasPrice * params.Wei)
 	}
 
-	if customizedNonce != nil {
-		t.Nonce = big.NewInt(int64(*customizedNonce))
+	if nonce != nil {
+		t.Nonce = big.NewInt(int64(*nonce))
 	}
 
-	params, err := c.Parse(wallet, method, arguments)
+	params, err := c.Parse(method, arguments)
 	if nil != err {
 		return nil, err
 	}
@@ -95,7 +104,6 @@ func (c *OwnerDataContract) Call(wallet *ethereum.Wallet, method, fund string, a
 }
 
 func (c *OwnerDataContract) Pack(
-	wallet *ethereum.Wallet,
 	method string,
 	arguments json.RawMessage) ([]byte, error) {
 	abi, err := ownerdata.OwnerDataMetaData.GetAbi()
@@ -103,7 +111,7 @@ func (c *OwnerDataContract) Pack(
 		return nil, err
 	}
 
-	parsedArgs, err := c.Parse(wallet, method, arguments)
+	parsedArgs, err := c.Parse(method, arguments)
 	if nil != err {
 		return nil, err
 	}
@@ -112,7 +120,6 @@ func (c *OwnerDataContract) Pack(
 }
 
 func (c *OwnerDataContract) Parse(
-	wallet *ethereum.Wallet,
 	method string,
 	arguments json.RawMessage) ([]interface{}, error) {
 	switch method {
@@ -179,14 +186,6 @@ func (c *OwnerDataContract) Parse(
 	default:
 		return nil, fmt.Errorf("unsupported method")
 	}
-}
-
-func (c *OwnerDataContract) EstimateGasLimit(
-	wallet *ethereum.Wallet,
-	contractAddr common.Address,
-	method string,
-	arguments json.RawMessage) (uint64, error) {
-	return 0, errors.New("not implemented")
 }
 
 func init() {

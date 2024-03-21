@@ -1,7 +1,6 @@
 package english_auction
 
 import (
-	"context"
 	"encoding/hex"
 	"encoding/json"
 	"errors"
@@ -10,7 +9,6 @@ import (
 	"strconv"
 	"strings"
 
-	goEthereum "github.com/ethereum/go-ethereum"
 	"github.com/ethereum/go-ethereum/common"
 	"github.com/ethereum/go-ethereum/core/types"
 	"github.com/ethereum/go-ethereum/params"
@@ -60,8 +58,9 @@ func (c *FeralfileEnglishAuctionContract) Call(
 	fund string,
 	arguments json.RawMessage,
 	noSend bool,
-	customizeGasPriceInWei *int64,
-	customizedNonce *uint64) (*types.Transaction, error) {
+	gasLimit uint64,
+	gasPrice *int64,
+	nonce *uint64) (*types.Transaction, error) {
 	contractAddr := common.HexToAddress(c.contractAddress)
 	contract, err := english_auction.NewFeralfileEnglishAuction(contractAddr, wallet.RPCClient())
 	if err != nil {
@@ -73,15 +72,16 @@ func (c *FeralfileEnglishAuctionContract) Call(
 	}
 
 	t.NoSend = noSend
-	if customizeGasPriceInWei != nil && *customizeGasPriceInWei != 0 {
-		t.GasPrice = big.NewInt(*customizeGasPriceInWei * params.Wei)
+	t.GasLimit = gasLimit
+	if gasPrice != nil && *gasPrice != 0 {
+		t.GasPrice = big.NewInt(*gasPrice * params.Wei)
 	}
 
-	if customizedNonce != nil {
-		t.Nonce = big.NewInt(int64(*customizedNonce))
+	if nonce != nil {
+		t.Nonce = big.NewInt(int64(*nonce))
 	}
 
-	params, err := c.Parse(wallet, method, arguments)
+	params, err := c.Parse(method, arguments)
 	if nil != err {
 		return nil, err
 	}
@@ -96,13 +96,6 @@ func (c *FeralfileEnglishAuctionContract) Call(
 		if !ok {
 			return nil, fmt.Errorf("invalid auctions params")
 		}
-
-		gasLimit, err := c.EstimateGasLimit(wallet, contractAddr, method, arguments)
-		if nil != err {
-			return nil, err
-		}
-
-		t.GasLimit = gasLimit
 
 		return contract.RegisterAuctions(t, auctions)
 	case "placeSignedBid":
@@ -213,7 +206,6 @@ func (c *FeralfileEnglishAuctionContract) Call(
 }
 
 func (c *FeralfileEnglishAuctionContract) Pack(
-	wallet *ethereum.Wallet,
 	method string,
 	arguments json.RawMessage) ([]byte, error) {
 	abi, err := english_auction.FeralfileEnglishAuctionMetaData.GetAbi()
@@ -221,7 +213,7 @@ func (c *FeralfileEnglishAuctionContract) Pack(
 		return nil, err
 	}
 
-	parsedArgs, err := c.Parse(wallet, method, arguments)
+	parsedArgs, err := c.Parse(method, arguments)
 	if nil != err {
 		return nil, err
 	}
@@ -230,7 +222,6 @@ func (c *FeralfileEnglishAuctionContract) Pack(
 }
 
 func (c *FeralfileEnglishAuctionContract) Parse(
-	wallet *ethereum.Wallet,
 	method string,
 	arguments json.RawMessage) ([]interface{}, error) {
 	switch method {
@@ -400,29 +391,6 @@ func (c *FeralfileEnglishAuctionContract) Parse(
 	default:
 		return nil, fmt.Errorf("unsupported method")
 	}
-}
-
-func (c *FeralfileEnglishAuctionContract) EstimateGasLimit(
-	wallet *ethereum.Wallet,
-	contractAddr common.Address,
-	method string,
-	arguments json.RawMessage) (uint64, error) {
-	data, err := c.Pack(wallet, method, arguments)
-	if nil != err {
-		return 0, err
-	}
-
-	gas, err := wallet.RPCClient().EstimateGas(context.Background(), goEthereum.CallMsg{
-		From: common.HexToAddress(wallet.Account()),
-		To:   &contractAddr,
-		Data: data,
-	})
-
-	if nil != err {
-		return 0, err
-	}
-
-	return gas * 115 / 100, nil // add 15% buffer
 }
 
 func init() {
