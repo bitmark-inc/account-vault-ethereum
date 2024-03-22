@@ -176,12 +176,12 @@ func (c *FeralfileExhibitionV3Contract) Call(
 			return nil, fmt.Errorf("invalid operator params")
 		}
 
-		approve, ok := params[1].(bool)
+		approved, ok := params[1].(bool)
 		if !ok {
-			return nil, fmt.Errorf("invalid approve params")
+			return nil, fmt.Errorf("invalid approved params")
 		}
 
-		return contract.SetApprovalForAll(t, operator, approve)
+		return contract.SetApprovalForAll(t, operator, approved)
 	default:
 		return nil, fmt.Errorf("unsupported method")
 	}
@@ -342,13 +342,13 @@ func (c *FeralfileExhibitionV3Contract) Parse(
 	case "setApprovalForAll":
 		var params struct {
 			Operator common.Address `json:"operator"`
-			Approve  bool           `json:"approve"`
+			Approved bool           `json:"approved"`
 		}
 		if err := json.Unmarshal(arguments, &params); err != nil {
 			return nil, err
 		}
 
-		return []interface{}{params.Operator, params.Approve}, nil
+		return []interface{}{params.Operator, params.Approved}, nil
 	default:
 		return nil, fmt.Errorf("unsupported method")
 	}

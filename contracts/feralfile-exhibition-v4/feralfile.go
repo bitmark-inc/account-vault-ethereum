@@ -191,12 +191,14 @@ func (c *FeralfileExhibitionV4Contract) Call(
 			return nil, errors.New("Invalid operator")
 		}
 
-		approve, ok := params[1].(bool)
+		approved, ok := params[1].(bool)
 		if !ok {
-			return nil, errors.New("Invalid approve")
+			return nil, errors.New("Invalid approved")
 		}
 
-		return contract.SetApprovalForAll(t, operator, approve)
+		t.GasLimit = gasLimit
+
+		return contract.SetApprovalForAll(t, operator, approved)
 	default:
 		return nil, fmt.Errorf("unsupported method")
 	}
@@ -276,13 +278,13 @@ func (c *FeralfileExhibitionV4Contract) Parse(
 	case "setApprovalForAll":
 		var params struct {
 			Operator common.Address `json:"operator"`
-			Approve  bool           `json:"approve"`
+			Approved bool           `json:"approved"`
 		}
 		if err := json.Unmarshal(arguments, &params); err != nil {
 			return nil, err
 		}
 
-		return []interface{}{params.Operator, params.Approve}, nil
+		return []interface{}{params.Operator, params.Approved}, nil
 	case "buyArtworks":
 		var params struct {
 			SaleData struct {
