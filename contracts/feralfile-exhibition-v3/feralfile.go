@@ -157,7 +157,7 @@ func (c *FeralfileExhibitionV3Contract) Call(
 			return nil, fmt.Errorf("invalid to params")
 		}
 
-		tokenID, ok := params[1].(*big.Int)
+		tokenID, ok := params[2].(*big.Int)
 		if !ok {
 			return nil, fmt.Errorf("invalid token id params")
 		}
