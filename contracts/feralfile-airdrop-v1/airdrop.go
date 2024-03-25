@@ -64,10 +64,12 @@ func (c *FeralFileAirdropV1Contract) Call(
 	fund string,
 	arguments json.RawMessage,
 	noSend bool,
-	customizeGasPriceInWei *int64,
-	customizedNonce *uint64) (*types.Transaction, error) {
+	gasLimit uint64,
+	gasPrice *int64,
+	nonce *uint64) (*types.Transaction, error) {
+	contractAddr := common.HexToAddress(c.contractAddress)
 	contract, err := airdropv1.NewFeralFileAirdropV1(
-		common.HexToAddress(c.contractAddress),
+		contractAddr,
 		wallet.RPCClient())
 	if err != nil {
 		return nil, err
@@ -79,12 +81,13 @@ func (c *FeralFileAirdropV1Contract) Call(
 	}
 
 	t.NoSend = noSend
-	if customizeGasPriceInWei != nil && *customizeGasPriceInWei != 0 {
-		t.GasPrice = big.NewInt(*customizeGasPriceInWei * params.Wei)
+	t.GasLimit = gasLimit
+	if gasPrice != nil && *gasPrice != 0 {
+		t.GasPrice = big.NewInt(*gasPrice * params.Wei)
 	}
 
-	if customizedNonce != nil {
-		t.Nonce = big.NewInt(int64(*customizedNonce))
+	if nonce != nil {
+		t.Nonce = big.NewInt(int64(*nonce))
 	}
 
 	params, err := c.Parse(method, arguments)
@@ -108,7 +111,6 @@ func (c *FeralFileAirdropV1Contract) Call(
 			return nil, fmt.Errorf("invalid amount")
 		}
 
-		t.GasLimit = 100000
 		return contract.Mint(t, tokenID, amount)
 	case "airdrop":
 		if len(params) != 2 {
@@ -124,9 +126,6 @@ func (c *FeralFileAirdropV1Contract) Call(
 		if !ok {
 			return nil, fmt.Errorf("invalid to address")
 		}
-
-		const gasLimitPerItem = 150000
-		t.GasLimit = uint64(gasLimitPerItem * len(to))
 
 		return contract.Airdrop(t, tokenID, to)
 	}
