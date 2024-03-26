@@ -21,8 +21,9 @@ type Contract interface {
 		fund string,
 		arguments json.RawMessage,
 		noSend bool,
-		customizeGasPriceInWei *int64,
-		customizedNonce *uint64) (tx *types.Transaction, err error)
+		gasLimit uint64,
+		gasPrice *int64,
+		nonce *uint64) (tx *types.Transaction, err error)
 
 	// Pack packs the method and arguments into a byte array representing
 	// the smart contract call data

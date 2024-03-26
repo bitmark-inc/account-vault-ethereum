@@ -58,9 +58,11 @@ func (c *FeralfileEnglishAuctionContract) Call(
 	fund string,
 	arguments json.RawMessage,
 	noSend bool,
-	customizeGasPriceInWei *int64,
-	customizedNonce *uint64) (*types.Transaction, error) {
-	contract, err := english_auction.NewFeralfileEnglishAuction(common.HexToAddress(c.contractAddress), wallet.RPCClient())
+	gasLimit uint64,
+	gasPrice *int64,
+	nonce *uint64) (*types.Transaction, error) {
+	contractAddr := common.HexToAddress(c.contractAddress)
+	contract, err := english_auction.NewFeralfileEnglishAuction(contractAddr, wallet.RPCClient())
 	if err != nil {
 		return nil, err
 	}
@@ -70,12 +72,13 @@ func (c *FeralfileEnglishAuctionContract) Call(
 	}
 
 	t.NoSend = noSend
-	if customizeGasPriceInWei != nil && *customizeGasPriceInWei != 0 {
-		t.GasPrice = big.NewInt(*customizeGasPriceInWei * params.Wei)
+	t.GasLimit = gasLimit
+	if gasPrice != nil && *gasPrice != 0 {
+		t.GasPrice = big.NewInt(*gasPrice * params.Wei)
 	}
 
-	if customizedNonce != nil {
-		t.Nonce = big.NewInt(int64(*customizedNonce))
+	if nonce != nil {
+		t.Nonce = big.NewInt(int64(*nonce))
 	}
 
 	params, err := c.Parse(method, arguments)
