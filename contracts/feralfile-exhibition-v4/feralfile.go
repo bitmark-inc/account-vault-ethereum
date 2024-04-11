@@ -65,7 +65,8 @@ func (c *FeralfileExhibitionV4Contract) Deploy(
 		params.CostReceiver,
 		params.ContractURI,
 		params.SeriesIDs,
-		params.SeriesMaxSupplies)
+		params.SeriesMaxSupplies,
+	)
 	if err != nil {
 		return "", "", err
 	}
@@ -199,6 +200,12 @@ func (c *FeralfileExhibitionV4Contract) Call(
 		t.GasLimit = gasLimit
 
 		return contract.SetApprovalForAll(t, operator, approved)
+	case "setAdvanceSetting":
+		if len(params) != 2 {
+			return nil, errors.New("Invalid parameters")
+		}
+
+		return contract.SetAdvanceSetting(t, params[0].([]common.Address), params[1].([]*big.Int))
 	default:
 		return nil, fmt.Errorf("unsupported method")
 	}
@@ -360,6 +367,22 @@ func (c *FeralfileExhibitionV4Contract) Parse(
 		}
 
 		return []interface{}{r32Val, s32Val, uint8(vVal), saleData}, nil
+	case "setAdvanceSetting":
+		var params struct {
+			AdvanceAddresses []common.Address  `json:"advance_addresses"`
+			AdvanceAmounts   []ethereum.BigInt `json:"advance_amounts"`
+		}
+		if err := json.Unmarshal(arguments, &params); err != nil {
+			return nil, err
+		}
+
+		advanceAmounts := make([]*big.Int, len(params.AdvanceAmounts))
+		for i, v := range params.AdvanceAmounts {
+			amount := v.Int // closure issue
+			advanceAmounts[i] = &amount
+		}
+
+		return []interface{}{params.AdvanceAddresses, advanceAmounts}, nil
 	default:
 		return nil, fmt.Errorf("unsupported method")
 	}
