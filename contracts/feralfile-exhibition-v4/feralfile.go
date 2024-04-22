@@ -65,7 +65,8 @@ func (c *FeralfileExhibitionV4Contract) Deploy(
 		params.CostReceiver,
 		params.ContractURI,
 		params.SeriesIDs,
-		params.SeriesMaxSupplies)
+		params.SeriesMaxSupplies,
+	)
 	if err != nil {
 		return "", "", err
 	}
@@ -199,6 +200,7 @@ func (c *FeralfileExhibitionV4Contract) Call(
 		t.GasLimit = gasLimit
 
 		return contract.SetApprovalForAll(t, operator, approved)
+<<<<<<< HEAD
 	case "safeTransferFrom":
 		if len(params) != 3 {
 			return nil, fmt.Errorf("invalid params")
@@ -223,6 +225,14 @@ func (c *FeralfileExhibitionV4Contract) Call(
 			from,
 			to,
 			tokenID)
+=======
+	case "setAdvanceSetting":
+		if len(params) != 2 {
+			return nil, errors.New("Invalid parameters")
+		}
+
+		return contract.SetAdvanceSetting(t, params[0].([]common.Address), params[1].([]*big.Int))
+>>>>>>> develop
 	default:
 		return nil, fmt.Errorf("unsupported method")
 	}
@@ -248,6 +258,8 @@ func (c *FeralfileExhibitionV4Contract) Parse(
 	method string,
 	arguments json.RawMessage) ([]interface{}, error) {
 	switch method {
+	case "startSale":
+		return nil, nil
 	case "burnArtworks":
 		var params []ethereum.BigInt
 		if err := json.Unmarshal(arguments, &params); err != nil {
@@ -388,11 +400,22 @@ func (c *FeralfileExhibitionV4Contract) Parse(
 			To      common.Address  `json:"to"`
 			TokenID ethereum.BigInt `json:"token_id"`
 		}
+		return []interface{}{params.From, params.To, &params.TokenID.Int}, nil
+	case "setAdvanceSetting":
+		var params struct {
+			AdvanceAddresses []common.Address  `json:"advance_addresses"`
+			AdvanceAmounts   []ethereum.BigInt `json:"advance_amounts"`
+		}
 		if err := json.Unmarshal(arguments, &params); err != nil {
 			return nil, err
 		}
-
-		return []interface{}{params.From, params.To, &params.TokenID.Int}, nil
+		
+		advanceAmounts := make([]*big.Int, len(params.AdvanceAmounts))
+		for i, v := range params.AdvanceAmounts {
+			amount := v.Int // closure issue
+			advanceAmounts[i] = &amount
+		}
+		return []interface{}{params.AdvanceAddresses, advanceAmounts}, nil
 	default:
 		return nil, fmt.Errorf("unsupported method")
 	}
