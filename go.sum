@@ -63,6 +63,8 @@ github.com/aws/smithy-go v1.1.0/go.mod h1:EzMw8dbp/YJL4A5/sbhGddag+NPT7q084agLbB
 github.com/beorn7/perks v0.0.0-20180321164747-3a771d992973/go.mod h1:Dwedo/Wpr24TaqPxmxbtue+5NUziq4I4S80YR8gNf3Q=
 github.com/beorn7/perks v1.0.0/go.mod h1:KWe93zE9D1o94FZ5RNwFwVgaQK1VOXiVxmqh+CedLV8=
 github.com/beorn7/perks v1.0.1 h1:VlbKKnNfV8bJzeqoa4cOKqO6bYr3WgKZxO8Z16+hsOM=
+github.com/bitmark-inc/feralfile-exhibition-smart-contract v4.0.1-0.20240516090325-55af2667f0b0+incompatible h1:+a9ywh7DCc79fpY1PM/ish+xgWI+yLFxQsicJjoIjv0=
+github.com/bitmark-inc/feralfile-exhibition-smart-contract v4.0.1-0.20240516090325-55af2667f0b0+incompatible/go.mod h1:W8GAGPvJB9JM8O28wbujiMBJ+BeSmZuoBEe5cYskfj8=
 github.com/bitmark-inc/feralfile-exhibition-smart-contract/go-binding v0.0.0-20240420161158-7827629e2797 h1:avNsve02bxwzXzHGbvxrd78MYSdRJmnVwj50HsqZQCc=
 github.com/bitmark-inc/feralfile-exhibition-smart-contract/go-binding v0.0.0-20240420161158-7827629e2797/go.mod h1:shvtsuJyQJnByXKqf9n/jpjL4++FSJCFjXR/08iBnFY=
 github.com/bits-and-blooms/bitset v1.10.0 h1:ePXTeiPEazB5+opbv5fr8umg2R/1NlzgDsyepwsSr88=
