@@ -206,6 +206,12 @@ func (c *FeralfileExhibitionV4Contract) Call(
 		}
 
 		return contract.SetAdvanceSetting(t, params[0].([]common.Address), params[1].([]*big.Int))
+	case "updateTokenInformation":
+		if len(params) != 3 {
+			return nil, errors.New("Invalid parameters")
+		}
+
+		return contract.UpdateTokenInformation(t, params[0].(*big.Int), params[1].(string), params[2].([]byte))
 	default:
 		return nil, fmt.Errorf("unsupported method")
 	}
@@ -383,6 +389,8 @@ func (c *FeralfileExhibitionV4Contract) Parse(
 		}
 
 		return []interface{}{params.AdvanceAddresses, advanceAmounts}, nil
+	case "updateTokenInformation":
+		return []interface{}{}, nil
 	default:
 		return nil, fmt.Errorf("unsupported method")
 	}
