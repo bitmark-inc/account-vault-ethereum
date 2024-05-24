@@ -2,7 +2,6 @@ package feralfiletoken
 
 import (
 	"encoding/json"
-	"errors"
 	"fmt"
 	"math/big"
 
@@ -26,7 +25,25 @@ func FeralFileTokenContractFactory(contractAddress string) ethereum.Contract {
 func (c *FeralFileTokenContract) Deploy(
 	wallet *ethereum.Wallet,
 	arguments json.RawMessage) (string, string, error) {
-	return "", "", errors.ErrUnsupported
+	var params struct {
+		Name   string `json:"name"`
+		Symbol string `json:"symbol"`
+	}
+
+	if err := json.Unmarshal(arguments, &params); err != nil {
+		return "", "", err
+	}
+
+	t, err := wallet.Transactor()
+	if err != nil {
+		return "", "", err
+	}
+
+	address, tx, _, err := feralfiletoken.DeployFeralfileToken(t, wallet.RPCClient(), params.Name, params.Symbol)
+	if err != nil {
+		return "", "", err
+	}
+	return address.String(), tx.Hash().String(), nil
 }
 
 func (c *FeralFileTokenContract) Call(
