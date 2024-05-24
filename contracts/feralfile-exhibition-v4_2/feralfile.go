@@ -1,4 +1,4 @@
-package feralfilev4
+package feralfilev4_2
 
 import (
 	"encoding/hex"
@@ -14,21 +14,21 @@ import (
 	"github.com/ethereum/go-ethereum/params"
 
 	ethereum "github.com/bitmark-inc/account-vault-ethereum"
-	feralfilev4 "github.com/bitmark-inc/feralfile-exhibition-smart-contract/go-binding/feralfile-exhibition-v4"
+	feralfilev4 "github.com/bitmark-inc/feralfile-exhibition-smart-contract/go-binding/feralfile-exhibition-v4_2"
 )
 
-type FeralfileExhibitionV4Contract struct {
+type FeralfileExhibitionV4_2Contract struct {
 	contractAddress string
 }
 
-func FeralfileExhibitionV4ContractFactory(contractAddress string) ethereum.Contract {
-	return &FeralfileExhibitionV4Contract{
+func FeralfileExhibitionV4_2ContractFactory(contractAddress string) ethereum.Contract {
+	return &FeralfileExhibitionV4_2Contract{
 		contractAddress: contractAddress,
 	}
 }
 
 // Deploy deploys the smart contract to ethereum blockchain
-func (c *FeralfileExhibitionV4Contract) Deploy(
+func (c *FeralfileExhibitionV4_2Contract) Deploy(
 	wallet *ethereum.Wallet,
 	arguments json.RawMessage) (string, string, error) {
 	var params struct {
@@ -53,7 +53,7 @@ func (c *FeralfileExhibitionV4Contract) Deploy(
 		return "", "", err
 	}
 
-	address, tx, _, err := feralfilev4.DeployFeralfileExhibitionV4(
+	address, tx, _, err := feralfilev4.DeployFeralfileExhibitionV42(
 		t,
 		wallet.RPCClient(),
 		params.Name,
@@ -74,7 +74,7 @@ func (c *FeralfileExhibitionV4Contract) Deploy(
 }
 
 // Call is the entry function for account vault to interact with a smart contract.
-func (c *FeralfileExhibitionV4Contract) Call(
+func (c *FeralfileExhibitionV4_2Contract) Call(
 	wallet *ethereum.Wallet,
 	method,
 	fund string,
@@ -84,7 +84,7 @@ func (c *FeralfileExhibitionV4Contract) Call(
 	gasPrice *int64,
 	nonce *uint64) (*types.Transaction, error) {
 	contractAddr := common.HexToAddress(c.contractAddress)
-	contract, err := feralfilev4.NewFeralfileExhibitionV4(contractAddr, wallet.RPCClient())
+	contract, err := feralfilev4.NewFeralfileExhibitionV42(contractAddr, wallet.RPCClient())
 	if err != nil {
 		return nil, err
 	}
@@ -126,12 +126,12 @@ func (c *FeralfileExhibitionV4Contract) Call(
 			return nil, errors.New("Invalid parameters")
 		}
 
-		mintData, ok := params[0].([]feralfilev4.FeralfileExhibitionV4MintData)
+		mintData, ok := params[0].([]feralfilev4.FeralfileExhibitionV42MintDataWithIndex)
 		if !ok {
 			return nil, errors.New("Invalid token mint parameters")
 		}
 
-		return contract.MintArtworks(t, mintData)
+		return contract.MintArtworksWithIndex(t, mintData)
 	case "setTokenBaseURI":
 		if len(params) != 1 {
 			return nil, errors.New("Invalid parameters")
@@ -206,15 +206,21 @@ func (c *FeralfileExhibitionV4Contract) Call(
 		}
 
 		return contract.SetAdvanceSetting(t, params[0].([]common.Address), params[1].([]*big.Int))
+	case "updateTokenInformation":
+		if len(params) != 3 {
+			return nil, errors.New("Invalid parameters")
+		}
+
+		return contract.UpdateTokenInformation(t, params[0].(*big.Int), params[1].(string), params[2].([]byte))
 	default:
 		return nil, fmt.Errorf("unsupported method")
 	}
 }
 
-func (c *FeralfileExhibitionV4Contract) Pack(
+func (c *FeralfileExhibitionV4_2Contract) Pack(
 	method string,
 	arguments json.RawMessage) ([]byte, error) {
-	abi, err := feralfilev4.FeralfileExhibitionV4MetaData.GetAbi()
+	abi, err := feralfilev4.FeralfileExhibitionV42MetaData.GetAbi()
 	if nil != err {
 		return nil, err
 	}
@@ -227,7 +233,7 @@ func (c *FeralfileExhibitionV4Contract) Pack(
 	return abi.Pack(method, parsedArgs...)
 }
 
-func (c *FeralfileExhibitionV4Contract) Parse(
+func (c *FeralfileExhibitionV4_2Contract) Parse(
 	method string,
 	arguments json.RawMessage) ([]interface{}, error) {
 	switch method {
@@ -251,9 +257,10 @@ func (c *FeralfileExhibitionV4Contract) Parse(
 		return []interface{}{tokenIDs}, nil
 	case "mintArtworks":
 		var params []struct {
-			SeriesID ethereum.BigInt `json:"series_id"`
-			TokenID  ethereum.BigInt `json:"token_id"`
-			Owner    common.Address  `json:"owner"`
+			SeriesID   ethereum.BigInt `json:"series_id"`
+			TokenID    ethereum.BigInt `json:"token_id"`
+			Owner      common.Address  `json:"owner"`
+			TokenIndex ethereum.BigInt `json:"token_index"`
 		}
 		if err := json.Unmarshal(arguments, &params); err != nil {
 			return nil, err
@@ -262,12 +269,13 @@ func (c *FeralfileExhibitionV4Contract) Parse(
 			return nil, errors.New("Invalid token mint parameters")
 		}
 
-		mintData := make([]feralfilev4.FeralfileExhibitionV4MintData, len(params))
+		mintData := make([]feralfilev4.FeralfileExhibitionV42MintDataWithIndex, len(params))
 		for i := 0; i < len(params); i++ {
-			mintData[i] = feralfilev4.FeralfileExhibitionV4MintData{
-				SeriesId: &params[i].SeriesID.Int,
-				TokenId:  &params[i].TokenID.Int,
-				Owner:    params[i].Owner,
+			mintData[i] = feralfilev4.FeralfileExhibitionV42MintDataWithIndex{
+				SeriesId:   &params[i].SeriesID.Int,
+				TokenId:    &params[i].TokenID.Int,
+				Owner:      params[i].Owner,
+				TokenIndex: &params[i].TokenIndex.Int,
 			}
 		}
 
@@ -383,11 +391,22 @@ func (c *FeralfileExhibitionV4Contract) Parse(
 		}
 
 		return []interface{}{params.AdvanceAddresses, advanceAmounts}, nil
+	case "updateTokenInformation":
+		var params struct {
+			TokenID   ethereum.BigInt `json:"token_id"`
+			ImageURI  string          `json:"image_uri"`
+			Paramters []byte          `json:"parameters"`
+		}
+		if err := json.Unmarshal(arguments, &params); err != nil {
+			return nil, err
+		}
+
+		return []interface{}{params.TokenID.Int, params.ImageURI, params.Paramters}, nil
 	default:
 		return nil, fmt.Errorf("unsupported method")
 	}
 }
 
 func init() {
-	ethereum.RegisterContract("FeralfileExhibitionV4", FeralfileExhibitionV4ContractFactory)
+	ethereum.RegisterContract("FeralfileExhibitionV4_2", FeralfileExhibitionV4_2ContractFactory)
 }
