@@ -230,7 +230,11 @@ func (c *FeralfileExhibitionV4_2Contract) Pack(
 		return nil, err
 	}
 
-	return abi.Pack(method, parsedArgs...)
+	mappedMethod := method
+	if method == "mintArtworks" {
+		mappedMethod = "mintArtworksWithIndex"
+	}
+	return abi.Pack(mappedMethod, parsedArgs...)
 }
 
 func (c *FeralfileExhibitionV4_2Contract) Parse(
@@ -401,7 +405,7 @@ func (c *FeralfileExhibitionV4_2Contract) Parse(
 			return nil, err
 		}
 
-		return []interface{}{params.TokenID.Int, params.ImageURI, params.Paramters}, nil
+		return []interface{}{&params.TokenID.Int, params.ImageURI, params.Paramters}, nil
 	default:
 		return nil, fmt.Errorf("unsupported method")
 	}
