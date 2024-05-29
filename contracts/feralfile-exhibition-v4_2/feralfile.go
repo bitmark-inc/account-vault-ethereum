@@ -42,6 +42,7 @@ func (c *FeralfileExhibitionV4_2Contract) Deploy(
 		IsBridgeable      bool           `json:"is_bridgeable"`
 		SeriesIDs         []*big.Int     `json:"series_ids"`
 		SeriesMaxSupplies []*big.Int     `json:"series_max_supplies"`
+		ERC20Contract     common.Address `json:"erc20_contract"`
 	}
 
 	if err := json.Unmarshal(arguments, &params); err != nil {
@@ -66,6 +67,7 @@ func (c *FeralfileExhibitionV4_2Contract) Deploy(
 		params.ContractURI,
 		params.SeriesIDs,
 		params.SeriesMaxSupplies,
+		params.ERC20Contract,
 	)
 	if err != nil {
 		return "", "", err
@@ -211,7 +213,7 @@ func (c *FeralfileExhibitionV4_2Contract) Call(
 			return nil, errors.New("Invalid parameters")
 		}
 
-		return contract.UpdateTokenInformation(t, params[0].(*big.Int), params[1].(string), params[2].([]byte))
+		return contract.UpdateTokenInformation(t, params[0].(*big.Int), params[1].(string), params[2].([]byte), params[3].(*big.Int))
 	default:
 		return nil, fmt.Errorf("unsupported method")
 	}
@@ -397,15 +399,16 @@ func (c *FeralfileExhibitionV4_2Contract) Parse(
 		return []interface{}{params.AdvanceAddresses, advanceAmounts}, nil
 	case "updateTokenInformation":
 		var params struct {
-			TokenID   ethereum.BigInt `json:"token_id"`
-			ImageURI  string          `json:"image_uri"`
-			Paramters []byte          `json:"parameters"`
+			TokenID    ethereum.BigInt `json:"token_id"`
+			ImageURI   string          `json:"image_uri"`
+			Paramters  []byte          `json:"parameters"`
+			CoinAmount ethereum.BigInt `json:"coin_amount"`
 		}
 		if err := json.Unmarshal(arguments, &params); err != nil {
 			return nil, err
 		}
 
-		return []interface{}{&params.TokenID.Int, params.ImageURI, params.Paramters}, nil
+		return []interface{}{&params.TokenID.Int, params.ImageURI, params.Paramters, &params.CoinAmount.Int}, nil
 	default:
 		return nil, fmt.Errorf("unsupported method")
 	}
