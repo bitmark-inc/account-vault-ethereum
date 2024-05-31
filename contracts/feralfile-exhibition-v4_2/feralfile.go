@@ -209,7 +209,7 @@ func (c *FeralfileExhibitionV4_2Contract) Call(
 
 		return contract.SetAdvanceSetting(t, params[0].([]common.Address), params[1].([]*big.Int))
 	case "updateTokenInformation":
-		if len(params) != 3 {
+		if len(params) != 4 {
 			return nil, errors.New("Invalid parameters")
 		}
 
