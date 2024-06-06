@@ -3,7 +3,7 @@ module github.com/bitmark-inc/account-vault-ethereum
 go 1.20
 
 require (
-	github.com/bitmark-inc/feralfile-exhibition-smart-contract/go-binding v0.0.0-20240529042939-0b6972bb280b
+	github.com/bitmark-inc/feralfile-exhibition-smart-contract/go-binding v0.0.0-20240607014320-77c7b7083b21
 	github.com/ethereum/go-ethereum v1.13.10
 	github.com/miguelmota/go-ethereum-hdwallet v0.1.1
 	github.com/stretchr/testify v1.8.4

@@ -32,17 +32,17 @@ func (c *FeralfileExhibitionV4_2Contract) Deploy(
 	wallet *ethereum.Wallet,
 	arguments json.RawMessage) (string, string, error) {
 	var params struct {
-		Name              string         `json:"name"`
-		Symbol            string         `json:"symbol"`
-		Signer            common.Address `json:"signer"`
-		Vault             common.Address `json:"vault"`
-		CostReceiver      common.Address `json:"cost_receiver"`
-		ContractURI       string         `json:"contract_uri"`
-		IsBurnable        bool           `json:"is_burnable"`
-		IsBridgeable      bool           `json:"is_bridgeable"`
-		SeriesIDs         []*big.Int     `json:"series_ids"`
-		SeriesMaxSupplies []*big.Int     `json:"series_max_supplies"`
-		ERC20Contract     common.Address `json:"erc20_contract"`
+		Name               string         `json:"name"`
+		Symbol             string         `json:"symbol"`
+		Signer             common.Address `json:"signer"`
+		Vault              common.Address `json:"vault"`
+		CostReceiver       common.Address `json:"cost_receiver"`
+		ContractURI        string         `json:"contract_uri"`
+		IsBurnable         bool           `json:"is_burnable"`
+		IsBridgeable       bool           `json:"is_bridgeable"`
+		SeriesIDs          []*big.Int     `json:"series_ids"`
+		SeriesMaxSupplies  []*big.Int     `json:"series_max_supplies"`
+		SeriesNextTokenIds []*big.Int     `json:"series_next_token_ids"`
 	}
 
 	if err := json.Unmarshal(arguments, &params); err != nil {
@@ -67,7 +67,7 @@ func (c *FeralfileExhibitionV4_2Contract) Deploy(
 		params.ContractURI,
 		params.SeriesIDs,
 		params.SeriesMaxSupplies,
-		params.ERC20Contract,
+		params.SeriesNextTokenIds,
 	)
 	if err != nil {
 		return "", "", err
@@ -128,12 +128,12 @@ func (c *FeralfileExhibitionV4_2Contract) Call(
 			return nil, errors.New("Invalid parameters")
 		}
 
-		mintData, ok := params[0].([]feralfilev4.FeralfileExhibitionV42MintDataWithIndex)
+		mintData, ok := params[0].([]feralfilev4.FeralfileExhibitionV4MintData)
 		if !ok {
 			return nil, errors.New("Invalid token mint parameters")
 		}
 
-		return contract.MintArtworksWithIndex(t, mintData)
+		return contract.MintArtworks(t, mintData)
 	case "setTokenBaseURI":
 		if len(params) != 1 {
 			return nil, errors.New("Invalid parameters")
@@ -184,6 +184,32 @@ func (c *FeralfileExhibitionV4_2Contract) Call(
 		}
 
 		return contract.BuyArtworks(t, r, s, v, saleData)
+	case "buyBulkArtworks":
+		if len(params) != 4 {
+			return nil, errors.New("Invalid parameters")
+		}
+
+		r, ok := params[0].([32]byte)
+		if !ok {
+			return nil, fmt.Errorf("invalid r")
+		}
+
+		s, ok := params[1].([32]byte)
+		if !ok {
+			return nil, fmt.Errorf("invalid s")
+		}
+
+		v, ok := params[2].(uint8)
+		if !ok {
+			return nil, fmt.Errorf("invalid v")
+		}
+
+		saleData, ok := params[3].(feralfilev4.IFeralfileSaleDataV2SaleDataV2)
+		if !ok {
+			return nil, fmt.Errorf("invalid sale data")
+		}
+
+		return contract.BuyBulkArtworks(t, r, s, v, saleData)
 	case "setApprovalForAll":
 		if len(params) != 2 {
 			return nil, errors.New("Invalid parameters")
@@ -208,12 +234,6 @@ func (c *FeralfileExhibitionV4_2Contract) Call(
 		}
 
 		return contract.SetAdvanceSetting(t, params[0].([]common.Address), params[1].([]*big.Int))
-	case "updateTokenInformation":
-		if len(params) != 4 {
-			return nil, errors.New("Invalid parameters")
-		}
-
-		return contract.UpdateTokenInformation(t, params[0].(*big.Int), params[1].(string), params[2].([]byte), params[3].(*big.Int))
 	default:
 		return nil, fmt.Errorf("unsupported method")
 	}
@@ -232,11 +252,7 @@ func (c *FeralfileExhibitionV4_2Contract) Pack(
 		return nil, err
 	}
 
-	mappedMethod := method
-	if method == "mintArtworks" {
-		mappedMethod = "mintArtworksWithIndex"
-	}
-	return abi.Pack(mappedMethod, parsedArgs...)
+	return abi.Pack(method, parsedArgs...)
 }
 
 func (c *FeralfileExhibitionV4_2Contract) Parse(
@@ -263,10 +279,9 @@ func (c *FeralfileExhibitionV4_2Contract) Parse(
 		return []interface{}{tokenIDs}, nil
 	case "mintArtworks":
 		var params []struct {
-			SeriesID   ethereum.BigInt `json:"series_id"`
-			TokenID    ethereum.BigInt `json:"token_id"`
-			Owner      common.Address  `json:"owner"`
-			TokenIndex ethereum.BigInt `json:"token_index"`
+			SeriesID ethereum.BigInt `json:"series_id"`
+			TokenID  ethereum.BigInt `json:"token_id"`
+			Owner    common.Address  `json:"owner"`
 		}
 		if err := json.Unmarshal(arguments, &params); err != nil {
 			return nil, err
@@ -275,13 +290,12 @@ func (c *FeralfileExhibitionV4_2Contract) Parse(
 			return nil, errors.New("Invalid token mint parameters")
 		}
 
-		mintData := make([]feralfilev4.FeralfileExhibitionV42MintDataWithIndex, len(params))
+		mintData := make([]feralfilev4.FeralfileExhibitionV4MintData, len(params))
 		for i := 0; i < len(params); i++ {
-			mintData[i] = feralfilev4.FeralfileExhibitionV42MintDataWithIndex{
-				SeriesId:   &params[i].SeriesID.Int,
-				TokenId:    &params[i].TokenID.Int,
-				Owner:      params[i].Owner,
-				TokenIndex: &params[i].TokenIndex.Int,
+			mintData[i] = feralfilev4.FeralfileExhibitionV4MintData{
+				SeriesId: &params[i].SeriesID.Int,
+				TokenId:  &params[i].TokenID.Int,
+				Owner:    params[i].Owner,
 			}
 		}
 
@@ -381,6 +395,73 @@ func (c *FeralfileExhibitionV4_2Contract) Parse(
 		}
 
 		return []interface{}{r32Val, s32Val, uint8(vVal), saleData}, nil
+	case "buyBulkArtworks":
+		var params struct {
+			SaleData struct {
+				Price         ethereum.BigInt `json:"price"`
+				Cost          ethereum.BigInt `json:"cost"`
+				ExpiryTime    ethereum.BigInt `json:"expiryTime"`
+				Destination   common.Address  `json:"destination"`
+				Nonce         ethereum.BigInt `json:"nonce"`
+				SeriesID      ethereum.BigInt `json:"seriesId"`
+				Quantity      uint16          `json:"quantity"`
+				RevenueShares []struct {
+					Recipient common.Address  `json:"recipient"`
+					Bps       ethereum.BigInt `json:"bps"`
+				} `json:"revenueShares"`
+				PayByVaultContract bool `json:"payByVaultContract"`
+			} `json:"saleData"`
+			R string `json:"r"`
+			S string `json:"s"`
+			V string `json:"v"`
+		}
+
+		if err := json.Unmarshal(arguments, &params); err != nil {
+			return nil, err
+		}
+
+		rVal, err := hex.DecodeString(strings.Replace(params.R, "0x", "", -1))
+		if err != nil {
+			return nil, err
+		}
+		sVal, err := hex.DecodeString(strings.Replace(params.S, "0x", "", -1))
+		if err != nil {
+			return nil, err
+		}
+		vVal, err := strconv.ParseUint(strings.Replace(params.V, "0x", "", -1), 16, 64)
+		if err != nil {
+			return nil, err
+		}
+		if len(rVal) != 32 || len(sVal) != 32 {
+			return nil, errors.New("required signature length is 32")
+		}
+		var r32Val [32]byte
+		var s32Val [32]byte
+		copy(r32Val[:], rVal)
+		copy(s32Val[:], sVal)
+
+		revenueShares := make([]feralfilev4.IFeralfileSaleDataRevenueShare, 0)
+		for _, v := range params.SaleData.RevenueShares {
+			bps := v.Bps.Int
+			revenueShares = append(revenueShares, feralfilev4.IFeralfileSaleDataRevenueShare{
+				Recipient: v.Recipient,
+				Bps:       &bps,
+			})
+		}
+
+		saleData := feralfilev4.IFeralfileSaleDataV2SaleDataV2{
+			Price:              &params.SaleData.Price.Int,
+			Cost:               &params.SaleData.Cost.Int,
+			ExpiryTime:         &params.SaleData.ExpiryTime.Int,
+			Destination:        params.SaleData.Destination,
+			Nonce:              &params.SaleData.Nonce.Int,
+			SeriesID:           &params.SaleData.SeriesID.Int,
+			Quantity:           params.SaleData.Quantity,
+			RevenueShares:      revenueShares,
+			PayByVaultContract: params.SaleData.PayByVaultContract,
+		}
+
+		return []interface{}{r32Val, s32Val, uint8(vVal), saleData}, nil
 	case "setAdvanceSetting":
 		var params struct {
 			AdvanceAddresses []common.Address  `json:"advance_addresses"`
@@ -397,18 +478,6 @@ func (c *FeralfileExhibitionV4_2Contract) Parse(
 		}
 
 		return []interface{}{params.AdvanceAddresses, advanceAmounts}, nil
-	case "updateTokenInformation":
-		var params struct {
-			TokenID    ethereum.BigInt `json:"token_id"`
-			ImageURI   string          `json:"image_uri"`
-			Paramters  []byte          `json:"parameters"`
-			CoinAmount ethereum.BigInt `json:"coin_amount"`
-		}
-		if err := json.Unmarshal(arguments, &params); err != nil {
-			return nil, err
-		}
-
-		return []interface{}{&params.TokenID.Int, params.ImageURI, params.Paramters, &params.CoinAmount.Int}, nil
 	default:
 		return nil, fmt.Errorf("unsupported method")
 	}
