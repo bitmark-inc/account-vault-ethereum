@@ -158,32 +158,6 @@ func (c *FeralfileExhibitionV4_2Contract) Call(
 		}
 
 		return contract.TransferOwnership(t, newOwner)
-	case "buyArtworks":
-		if len(params) != 4 {
-			return nil, errors.New("Invalid parameters")
-		}
-
-		r, ok := params[0].([32]byte)
-		if !ok {
-			return nil, fmt.Errorf("invalid r")
-		}
-
-		s, ok := params[1].([32]byte)
-		if !ok {
-			return nil, fmt.Errorf("invalid s")
-		}
-
-		v, ok := params[2].(uint8)
-		if !ok {
-			return nil, fmt.Errorf("invalid v")
-		}
-
-		saleData, ok := params[3].(feralfilev4.IFeralfileSaleDataSaleData)
-		if !ok {
-			return nil, fmt.Errorf("invalid sale data")
-		}
-
-		return contract.BuyArtworks(t, r, s, v, saleData)
 	case "buyBulkArtworks":
 		if len(params) != 4 {
 			return nil, errors.New("Invalid parameters")
@@ -322,79 +296,6 @@ func (c *FeralfileExhibitionV4_2Contract) Parse(
 		}
 
 		return []interface{}{params.Operator, params.Approved}, nil
-	case "buyArtworks":
-		var params struct {
-			SaleData struct {
-				Price         ethereum.BigInt   `json:"price"`
-				Cost          ethereum.BigInt   `json:"cost"`
-				ExpiryTime    ethereum.BigInt   `json:"expiryTime"`
-				Destination   common.Address    `json:"destination"`
-				TokenIds      []ethereum.BigInt `json:"tokenIds"`
-				RevenueShares [][]struct {
-					Recipient common.Address  `json:"recipient"`
-					Bps       ethereum.BigInt `json:"bps"`
-				} `json:"revenueShares"`
-				PayByVaultContract bool `json:"payByVaultContract"`
-			} `json:"saleData"`
-			R string `json:"r"`
-			S string `json:"s"`
-			V string `json:"v"`
-		}
-
-		if err := json.Unmarshal(arguments, &params); err != nil {
-			return nil, err
-		}
-
-		rVal, err := hex.DecodeString(strings.Replace(params.R, "0x", "", -1))
-		if err != nil {
-			return nil, err
-		}
-		sVal, err := hex.DecodeString(strings.Replace(params.S, "0x", "", -1))
-		if err != nil {
-			return nil, err
-		}
-		vVal, err := strconv.ParseUint(strings.Replace(params.V, "0x", "", -1), 16, 64)
-		if err != nil {
-			return nil, err
-		}
-		if len(rVal) != 32 || len(sVal) != 32 {
-			return nil, errors.New("required signature length is 32")
-		}
-		var r32Val [32]byte
-		var s32Val [32]byte
-		copy(r32Val[:], rVal)
-		copy(s32Val[:], sVal)
-
-		tokenIDs := make([]*big.Int, 0)
-		for _, v := range params.SaleData.TokenIds {
-			tokenID := v.Int
-			tokenIDs = append(tokenIDs, &tokenID)
-		}
-
-		revenueShares := make([][]feralfilev4.IFeralfileSaleDataRevenueShare, 0)
-		for _, v := range params.SaleData.RevenueShares {
-			revenueShare := make([]feralfilev4.IFeralfileSaleDataRevenueShare, 0)
-			for _, vv := range v {
-				bps := vv.Bps.Int
-				revenueShare = append(revenueShare, feralfilev4.IFeralfileSaleDataRevenueShare{
-					Recipient: vv.Recipient,
-					Bps:       &bps,
-				})
-			}
-			revenueShares = append(revenueShares, revenueShare)
-		}
-
-		saleData := feralfilev4.IFeralfileSaleDataSaleData{
-			Price:              &params.SaleData.Price.Int,
-			Cost:               &params.SaleData.Cost.Int,
-			ExpiryTime:         &params.SaleData.ExpiryTime.Int,
-			Destination:        params.SaleData.Destination,
-			TokenIds:           tokenIDs,
-			RevenueShares:      revenueShares,
-			PayByVaultContract: params.SaleData.PayByVaultContract,
-		}
-
-		return []interface{}{r32Val, s32Val, uint8(vVal), saleData}, nil
 	case "buyBulkArtworks":
 		var params struct {
 			SaleData struct {
