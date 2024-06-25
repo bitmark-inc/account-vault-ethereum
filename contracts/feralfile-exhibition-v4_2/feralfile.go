@@ -208,6 +208,30 @@ func (c *FeralfileExhibitionV4_2Contract) Call(
 		}
 
 		return contract.SetAdvanceSetting(t, params[0].([]common.Address), params[1].([]*big.Int))
+	case "safeTransferFrom":
+		if len(params) != 3 {
+			return nil, fmt.Errorf("invalid params")
+		}
+
+		from, ok := params[0].(common.Address)
+		if !ok {
+			return nil, fmt.Errorf("invalid from params")
+		}
+
+		to, ok := params[1].(common.Address)
+		if !ok {
+			return nil, fmt.Errorf("invalid to params")
+		}
+
+		tokenID, ok := params[2].(*big.Int)
+		if !ok {
+			return nil, fmt.Errorf("invalid token id params")
+		}
+
+		return contract.SafeTransferFrom(t,
+			from,
+			to,
+			tokenID)
 	default:
 		return nil, fmt.Errorf("unsupported method")
 	}
@@ -379,6 +403,17 @@ func (c *FeralfileExhibitionV4_2Contract) Parse(
 		}
 
 		return []interface{}{params.AdvanceAddresses, advanceAmounts}, nil
+	case "safeTransferFrom":
+		var params struct {
+			From    common.Address  `json:"from"`
+			To      common.Address  `json:"to"`
+			TokenID ethereum.BigInt `json:"token_id"`
+		}
+		if err := json.Unmarshal(arguments, &params); err != nil {
+			return nil, err
+		}
+
+		return []interface{}{params.From, params.To, &params.TokenID.Int}, nil
 	default:
 		return nil, fmt.Errorf("unsupported method")
 	}
