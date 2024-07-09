@@ -424,4 +424,5 @@ func (c *FeralfileExhibitionV4Contract) Parse(
 
 func init() {
 	ethereum.RegisterContract("FeralfileExhibitionV4", FeralfileExhibitionV4ContractFactory)
+	ethereum.RegisterContract("FeralfileExhibitionV4_3", FeralfileExhibitionV4ContractFactory)
 }
