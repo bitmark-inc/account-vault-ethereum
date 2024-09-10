@@ -203,6 +203,22 @@ func (c *FeralfileExhibitionV2Contract) Call(
 		}
 
 		return contract.SetApprovalForAll(t, operator, approved)
+	case "updateArtworkEditionIPFSCid":
+		if len(params) != 2 {
+			return nil, fmt.Errorf("invalid params")
+		}
+
+		tokenID, ok := params[0].(*big.Int)
+		if !ok {
+			return nil, fmt.Errorf("invalid token id params")
+		}
+
+		ipfsCID, ok := params[1].(string)
+		if !ok {
+			return nil, fmt.Errorf("invalid ipfs cid params")
+		}
+
+		return contract.UpdateArtworkEditionIPFSCid(t, tokenID, ipfsCID)
 	default:
 		return nil, fmt.Errorf("unsupported method")
 	}
@@ -287,6 +303,20 @@ func (c *FeralfileExhibitionV2Contract) Parse(
 		}
 
 		return []interface{}{params.Operator, params.Approved}, nil
+	case "updateArtworkEditionIPFSCid":
+		var params struct {
+			TokenID string `json:"token_id"`
+			IPFSCID string `json:"ipfs_cid"`
+		}
+		if err := json.Unmarshal(arguments, &params); err != nil {
+			return nil, err
+		}
+
+		tokenIDInt, ok := new(big.Int).SetString(params.TokenID, 10)
+		if !ok {
+			return nil, fmt.Errorf("invalid token id")
+		}
+		return []interface{}{tokenIDInt, params.IPFSCID}, nil
 	default:
 		return nil, fmt.Errorf("unsupported method")
 	}
