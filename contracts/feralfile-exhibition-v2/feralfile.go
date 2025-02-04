@@ -264,12 +264,11 @@ func (c *FeralfileExhibitionV2Contract) Parse(
 			nil
 	case "swapArtworkFromBitmark":
 		var params struct {
-			ArtworkID      ethereum.BigInt `json:"artwork_id"`
-			BitmarkID      ethereum.BigInt `json:"bitmark_id"`
-			EditionNumber  ethereum.BigInt `json:"edition_number"`
-			To             common.Address  `json:"to"`
-			PrevProvenance string          `json:"prev_provenance"`
-			IPFSCID        string          `json:"ipfs_cid"`
+			ArtworkID     ethereum.BigInt `json:"artwork_id"`
+			BitmarkID     ethereum.BigInt `json:"bitmark_id"`
+			EditionNumber ethereum.BigInt `json:"edition_number"`
+			To            common.Address  `json:"to"`
+			IPFSCID       string          `json:"ipfs_cid"`
 		}
 		if err := json.Unmarshal(arguments, &params); err != nil {
 			return nil, err
