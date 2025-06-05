@@ -423,6 +423,13 @@ func (c *FeralfileExhibitionV4Contract) Parse(
 }
 
 func init() {
+	// FeralfileExhibitionV4 and FeralfileExhibitionV4_3 mostly shares the same interface.
+	// The only difference is the function `mergeArtworks` that should be called by token owners.
 	ethereum.RegisterContract("FeralfileExhibitionV4", FeralfileExhibitionV4ContractFactory)
 	ethereum.RegisterContract("FeralfileExhibitionV4_3", FeralfileExhibitionV4ContractFactory)
+
+	// FeralfileExhibitionV4_4 exposes some more functions but it also mainly shares the same interface as FeralfileExhibitionV4.
+	// Those functions are not used in the current binding.
+	// TODO: Add binding for FeralfileExhibitionV4_4 whenever renderer functions can be called by the backend.
+	ethereum.RegisterContract("FeralfileExhibitionV4_4", FeralfileExhibitionV4ContractFactory)
 }
